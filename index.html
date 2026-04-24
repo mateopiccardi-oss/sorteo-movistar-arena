@@ -560,11 +560,10 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
   </div>
 
   <!-- KPI row -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
     <div class="stat"><div class="stat-l">Eventos</div><div class="stat-v" style="color:var(--ice2)" id="ds-ev">0</div><div class="stat-sub" id="ds-ev-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--ice),transparent)"></div></div>
     <div class="stat"><div class="stat-l">Inscriptos</div><div class="stat-v" style="color:var(--white)" id="ds-part">0</div><div class="stat-sub" id="ds-part-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.3),transparent)"></div></div>
     <div class="stat"><div class="stat-l">Ganadores</div><div class="stat-v" style="color:var(--amber)" id="ds-gan">0</div><div class="stat-sub" id="ds-gan-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Tickets</div><div class="stat-v" style="color:var(--green)" id="ds-tick">0</div><div class="stat-sub" id="ds-tick-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--green),transparent)"></div></div>
   </div>
 
   <!-- CHARTS ROW -->
@@ -1251,7 +1250,7 @@ function crearEvento(){
     formUrl:document.getElementById("ev-form").value.trim(),
     creadoEn:new Date().toISOString()
   });
-  S.eventos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
   S.evActivo=id;
   save();
   closeModal("modal-ev");
@@ -1290,7 +1289,7 @@ function guardarEvento(){
   ev.venue=document.getElementById("edit-venue").value.trim();
   ev.formUrl=document.getElementById("edit-form").value.trim();
   ev.antiRep=document.getElementById("edit-anti").checked;
-  S.eventos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
   save();
   closeModal("modal-edit");
   toast("Evento actualizado");
@@ -1400,10 +1399,10 @@ function renderMonthTabs(){
   const nowKey=now.getFullYear()+"-"+(String(now.getMonth()+1).padStart(2,"0"));
 
   const monthSet=new Set(S.eventos.map(e=>getMonthKey(e.fecha)));
-  const months=[...monthSet].sort((a,b)=>a.localeCompare(b));
+  const months=[...monthSet].sort((a,b)=>b.localeCompare(a));
 
   if(!_activeMonth||!months.includes(_activeMonth)){
-    _activeMonth=months.includes(nowKey)?nowKey:months[months.length-1];
+    _activeMonth=months.includes(nowKey)?nowKey:months[0];
   }
 
   const tabsEl=document.getElementById("month-tabs");
@@ -1452,7 +1451,7 @@ function _evBadge(ev){
 function renderEvsByMonth(month){
   const cont=document.getElementById("dash-evs");
   if(!cont)return;
-  const evs=S.eventos.filter(e=>getMonthKey(e.fecha)===month).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const evs=S.eventos.filter(e=>getMonthKey(e.fecha)===month).sort((a,b)=>b.fecha.localeCompare(a.fecha));
   if(!evs.length){
     cont.innerHTML='<div class="empty" style="padding:24px"><div class="empty-txt">Sin eventos este mes</div></div>';
     return;
@@ -1460,7 +1459,7 @@ function renderEvsByMonth(month){
   const shows=[...new Set(evs.map(e=>e.show))];
   const _showExp=window._showExp||(window._showExp=new Set());
   const groups=shows.map(show=>{
-    const fechas=evs.filter(e=>e.show===show).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    const fechas=evs.filter(e=>e.show===show).sort((a,b)=>b.fecha.localeCompare(a.fecha));
     const totalP=S.participantes.filter(x=>fechas.some(e=>e.id===x.evId)).length;
     const totalG=S.ganadores.filter(x=>fechas.some(e=>e.id===x.evId)).length;
     const totalEnv=S.ganadores.filter(x=>fechas.some(e=>e.id===x.evId)&&x.estado==="enviado").length;

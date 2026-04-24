@@ -18,7 +18,11 @@
   --r:8px;--rsm:5px;
   --fd:"Barlow Condensed",sans-serif;--fb:"Barlow",sans-serif;
 }
-body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgba(0,80,180,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(0,180,100,0.05) 0%,transparent 50%);color:var(--white);font-family:var(--fb);font-size:14px;line-height:1.55;min-height:100vh}
+@keyframes bgDrift{
+  0%,100%{background-position:0% 0%,100% 100%}
+  50%{background-position:30% 60%,70% 20%}
+}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgba(0,80,180,0.1) 0%,transparent 55%),radial-gradient(ellipse at 80% 100%,rgba(0,180,100,0.07) 0%,transparent 55%);background-size:200% 200%;animation:bgDrift 18s ease-in-out infinite;color:var(--white);font-family:var(--fb);font-size:14px;line-height:1.55;min-height:100vh}
 
 /* TOPBAR */
 .tb{position:sticky;top:0;z-index:100;height:60px;background:rgba(15,21,32,0.92);border-bottom:1px solid rgba(0,212,255,0.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;align-items:center;padding:0 24px;gap:16px}
@@ -39,17 +43,17 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgb
 .wiz{background:var(--bg2);border-bottom:1px solid var(--line);display:none;padding:0 20px;overflow-x:auto;scrollbar-width:none}
 .wiz::-webkit-scrollbar{display:none}
 .wiz-inner{display:flex;align-items:stretch;min-width:max-content}
-.ws{display:flex;align-items:center;gap:7px;padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
-.ws:hover{background:rgba(255,255,255,0.02)}
+.ws{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.ws:hover{background:rgba(255,255,255,0.025)}
 .ws.on{border-bottom-color:var(--ice)}
-.ws.done{border-bottom-color:rgba(0,240,160,0.4)}
-.ws-n{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:all .2s;background:rgba(255,255,255,0.06);color:var(--gray3)}
-.ws.on .ws-n{background:var(--ice);color:var(--bg)}
-.ws.done .ws-n{background:var(--green);color:var(--bg)}
+.ws.done{border-bottom-color:rgba(0,240,160,0.35)}
+.ws-n{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:all .25s;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);color:var(--gray3)}
+.ws.on .ws-n{background:var(--ice);color:var(--bg);border-color:var(--ice)}
+.ws.done .ws-n{background:rgba(0,240,160,0.15);color:var(--green);border-color:rgba(0,240,160,0.4)}
 .ws-lbl{font-size:12px;font-weight:500;color:var(--gray3);transition:color .15s}
-.ws.on .ws-lbl{color:var(--ice2);font-weight:600}
+.ws.on .ws-lbl{color:var(--white);font-weight:600}
 .ws.done .ws-lbl{color:var(--green)}
-.ws-arr{color:var(--gray3);font-size:10px;opacity:.3;margin-left:2px}
+.ws-arr{color:var(--gray3);font-size:11px;opacity:.4;margin-left:2px;font-weight:300}
 
 /* CONTENT */
 .pg{display:none;padding:22px 20px;max-width:900px;margin:0 auto;position:relative;z-index:1}
@@ -57,9 +61,9 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgb
 
 /* PAGE HEADER */
 .ph{margin-bottom:18px}
-.ph-eye{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ice);margin-bottom:4px}
-.ph-t{font-family:var(--fd);font-size:38px;font-weight:700;letter-spacing:1px;text-transform:uppercase;line-height:1}
-.ph-d{font-size:12px;color:var(--gray3);margin-top:3px}
+.ph-eye{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--ice);margin-bottom:5px;opacity:.9}
+.ph-t{font-family:var(--fd);font-size:28px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.1;color:var(--white)}
+.ph-d{font-size:12px;color:var(--gray3);margin-top:4px}
 
 /* CARD */
 .card{background:rgba(22,32,48,0.9);border:1px solid rgba(255,255,255,0.09);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
@@ -72,8 +76,9 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgb
 @media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){#charts-row{grid-template-columns:1fr!important}}
 .stat{background:rgba(22,32,48,0.9);border:1px solid rgba(255,255,255,0.09);border-radius:var(--r);padding:13px 15px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
-.stat-l{font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gray3);margin-bottom:3px}
-.stat-v{font-family:var(--fd);font-size:40px;font-weight:700;line-height:1;letter-spacing:-1px}
+.stat-l{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-bottom:4px}
+.stat-v{font-family:var(--fd);font-size:34px;font-weight:700;line-height:1;letter-spacing:-1px}
+.stat-sub{font-size:10px;color:var(--gray3);margin-top:5px;line-height:1.3}
 .stat::after{content:"";position:absolute;bottom:0;left:0;width:100%;height:2px}
 
 /* BUTTONS */
@@ -160,11 +165,6 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .cpbtn:hover{color:var(--white)}
 .cpbtn.ok{color:var(--green);border-color:rgba(0,240,160,0.3)}
 
-/* PDF GRID */
-.pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:7px}
-.pdfi{background:rgba(0,212,255,0.04);border:1px solid var(--ice-line);border-radius:var(--rsm);padding:9px 11px;display:flex;align-items:center;gap:7px;position:relative}
-.pdfi-n{font-size:11px;color:var(--ice2);word-break:break-all;flex:1}
-.pdfi-del{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:var(--red-bg);color:var(--red);border:1px solid rgba(255,61,90,0.25);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center}
 
 /* SWITCH */
 .sw-w{position:relative;display:inline-block;cursor:pointer;flex-shrink:0}
@@ -200,6 +200,63 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 
 /* NAV BTNS */
 .nav-btns{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+
+/* ── EVENT GROUPS ─────────────────────────────────────────── */
+.ev-group{border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);overflow:hidden;margin-bottom:10px;background:var(--bg2);transition:border-color .25s,box-shadow .25s}
+.ev-group.open{border-color:rgba(0,212,255,0.2);box-shadow:inset 3px 0 0 var(--ice),0 4px 24px rgba(0,0,0,.35)}
+.ev-group-hd{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(255,255,255,0.015);transition:background .2s;user-select:none;position:relative;overflow:hidden}
+.ev-group-hd:hover{background:rgba(255,255,255,0.03)}
+.ev-group.open .ev-group-hd{background:rgba(0,212,255,0.04)}
+.ev-group.open .ev-group-hd::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--ice),transparent);opacity:.4;pointer-events:none}
+.ev-group-chev{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:transform .3s cubic-bezier(.4,0,.2,1),background .2s,border-color .2s,color .2s;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--gray3)}
+.ev-group.open .ev-group-chev{transform:rotate(180deg);background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.25);color:var(--ice2)}
+.ev-group-info{flex:1;min-width:0}
+.ev-group-title{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.5px;line-height:1.1;transition:color .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-group.open .ev-group-title{color:var(--ice2)}
+.ev-group-sub{font-size:10px;color:var(--gray3);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ev-group-sub-dot{width:2px;height:2px;border-radius:50%;background:var(--gray3);opacity:.5;flex-shrink:0}
+.ev-group-body{border-top:1px solid rgba(255,255,255,0.05);max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1)}
+.ev-group.open .ev-group-body{max-height:1200px}
+
+.ev-card{display:flex;align-items:center;gap:11px;padding:11px 16px 11px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;background:transparent;transition:background .15s;position:relative}
+.ev-card:last-child{border-bottom:none}
+.ev-card:hover{background:rgba(255,255,255,0.025)}
+.ev-card.act{background:rgba(0,212,255,0.055)}
+.ev-card-bar{width:3px;align-self:stretch;flex-shrink:0;border-radius:0 2px 2px 0;margin-right:1px;background:transparent;transition:background .2s}
+.ev-card.act .ev-card-bar{background:var(--ice)}
+.ev-card.done .ev-card-bar{background:var(--green)}
+.ev-card.partial .ev-card-bar{background:var(--amber)}
+.ev-card-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;transition:all .2s;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--gray3)}
+.ev-card.act .ev-card-icon{background:rgba(0,212,255,0.12);border-color:rgba(0,212,255,0.3);color:var(--ice2)}
+.ev-card.done .ev-card-icon{background:rgba(0,240,160,0.1);border-color:rgba(0,240,160,0.25);color:var(--green)}
+.ev-card-main{flex:1;min-width:0}
+.ev-card-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s}
+.ev-card.act .ev-card-name{color:var(--ice2)}
+.ev-card-meta{font-size:10px;color:var(--gray3);margin-top:1px}
+.ev-card-stats{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.ev-cstat{display:flex;flex-direction:column;align-items:center;min-width:30px}
+.ev-cstat-v{font-family:var(--fd);font-size:15px;font-weight:700;line-height:1}
+.ev-cstat-l{font-size:7px;color:var(--gray3);text-transform:uppercase;letter-spacing:.8px;margin-top:1px}
+.ev-divider{width:1px;height:18px;background:rgba(255,255,255,0.06);flex-shrink:0}
+.ev-badge{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;flex-shrink:0;white-space:nowrap}
+.ev-badge-pend{background:rgba(255,255,255,0.06);color:var(--gray3);border:1px solid rgba(255,255,255,0.08)}
+.ev-badge-sort{background:rgba(255,176,32,0.1);color:var(--amber);border:1px solid rgba(255,176,32,0.2)}
+.ev-badge-conf{background:rgba(0,212,255,0.08);color:var(--ice2);border:1px solid rgba(0,212,255,0.18)}
+.ev-badge-done{background:rgba(0,240,160,0.08);color:var(--green);border:1px solid rgba(0,240,160,0.2)}
+.ev-card-btns{display:flex;gap:4px;align-items:center;flex-shrink:0}
+
+/* Month tabs */
+.month-tab{flex-shrink:0;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.5px;border:1px solid transparent;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;text-transform:uppercase}
+.month-tab.past{color:var(--gray3);background:transparent;border-color:transparent}
+.month-tab.past:hover{color:var(--gray2);background:rgba(255,255,255,0.04)}
+.month-tab.future{color:var(--gray2);background:transparent;border-color:transparent}
+.month-tab.future:hover{color:var(--white);background:rgba(255,255,255,0.05)}
+.month-tab.now{color:var(--ice2);background:rgba(0,212,255,0.06);border-color:rgba(0,212,255,0.15)}
+.month-tab.now:hover{background:rgba(0,212,255,0.1)}
+.month-tab.active{color:var(--bg)!important;background:var(--ice)!important;border-color:var(--ice)!important}
+.month-tab-dot{width:5px;height:5px;border-radius:50%;background:var(--ice);flex-shrink:0}
+.month-tab-cnt{font-size:9px;font-weight:700;font-family:var(--fb);padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);opacity:.8;letter-spacing:0}
+.month-tab.active .month-tab-cnt{background:rgba(0,0,0,0.15);opacity:.9}
 
 /* MISC */
 .flex{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -313,6 +370,80 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 }
 .drum.win{animation:drumWin .6s ease both, drumGlow 1.5s ease infinite}
 
+/* ── ENHANCED ANIMATIONS ──────────────────────────────────── */
+
+/* Drum spinning — blur effect + border pulse */
+@keyframes wrapGlow{
+  0%,100%{border-color:rgba(0,212,255,0.12);box-shadow:none}
+  50%{border-color:rgba(0,212,255,0.55);box-shadow:0 0 40px rgba(0,212,255,0.12),inset 0 0 40px rgba(0,212,255,0.04)}
+}
+.drum-wrap.spinning{animation:wrapGlow .9s ease-in-out infinite}
+.drum-wrap.spinning .drum-ew{color:var(--ice);opacity:1;letter-spacing:6px;transition:all .3s ease}
+.drum.spin{animation:ds .07s infinite alternate;filter:blur(1px)}
+
+/* Winner reveal — impacto visual */
+@keyframes drumReveal{
+  0%{opacity:0;transform:scale(0.6) translateY(12px);filter:blur(10px)}
+  55%{transform:scale(1.12) translateY(-4px);filter:blur(0)}
+  75%{transform:scale(0.96)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+}
+.drum.reveal{animation:drumReveal .55s cubic-bezier(.34,1.56,.64,1) both}
+
+/* Winner rows — entrada secuencial */
+@keyframes winnerSlideIn{
+  from{opacity:0;transform:translateX(-20px) scale(0.97)}
+  to{opacity:1;transform:translateX(0) scale(1)}
+}
+.res-item-anim{animation:winnerSlideIn .4s cubic-bezier(.34,1.56,.64,1) both}
+
+/* Flash burst al revelar ganador */
+@keyframes drumFlash{
+  0%{opacity:0}20%{opacity:1}100%{opacity:0}
+}
+.drum-flash{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,0.35) 0%,transparent 65%);
+  animation:drumFlash .7s ease both;z-index:0;border-radius:inherit;
+}
+
+/* Sparkles del bombo */
+@keyframes sparkle{
+  0%{opacity:1;transform:translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.2)}
+}
+.spark{
+  position:absolute;width:6px;height:6px;border-radius:50%;
+  background:var(--ice);pointer-events:none;z-index:9999;
+  animation:sparkle .75s ease-out both;
+}
+
+/* Stat countup */
+@keyframes statReveal{
+  from{opacity:0;transform:translateY(10px) scale(0.85)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.stat-v.counting{animation:statReveal .45s cubic-bezier(.34,1.56,.64,1) both}
+
+/* Ripple en botones */
+@keyframes rippleAnim{
+  0%{transform:scale(0);opacity:.5}
+  100%{transform:scale(5);opacity:0}
+}
+.btn-ripple-el{
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,0.25);
+  width:16px;height:16px;margin-left:-8px;margin-top:-8px;
+  pointer-events:none;
+  animation:rippleAnim .55s linear both;
+}
+
+/* Fondo sutil animado */
+@keyframes bgShift{
+  0%,100%{background-position:0% 0%}
+  50%{background-position:100% 100%}
+}
+
 /* Card top accent line animation */
 .card::before{transition:opacity .3s ease}
 .card:hover::before{opacity:.5}
@@ -359,9 +490,34 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
   opacity:1;
   margin-top:12px;
 }
+/* ── PIN GATE ─────────────────────────────────────────────── */
+#pin-gate{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:center;justify-content:center;background-image:radial-gradient(ellipse at 20% 0%,rgba(0,80,180,0.12) 0%,transparent 55%),radial-gradient(ellipse at 80% 100%,rgba(0,180,100,0.08) 0%,transparent 55%)}
+#pin-gate.out{animation:pinFadeOut .3s ease forwards;pointer-events:none}
+@keyframes pinFadeOut{to{opacity:0;transform:scale(1.03)}}
+.pin-box{background:var(--bg2);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:36px 40px;text-align:center;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:fadeUp .35s ease}
+.pin-title{font-family:var(--fd);font-size:22px;font-weight:700;letter-spacing:1px;color:var(--ice2);text-transform:uppercase;margin-bottom:4px}
+.pin-sub{font-size:11px;color:var(--gray3);margin-bottom:24px}
+.pin-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);padding:12px 16px;font-size:24px;font-family:var(--fd);font-weight:700;letter-spacing:10px;color:var(--white);text-align:center;outline:none;transition:border-color .2s;caret-color:var(--ice)}
+.pin-input:focus{border-color:var(--ice)}
+.pin-input.err{border-color:var(--red)!important;animation:pinShake .3s ease}
+.pin-error{font-size:11px;color:var(--red);margin-top:8px;min-height:16px}
+.pin-btn{width:100%;margin-top:16px;padding:12px;font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:var(--ice);color:var(--bg);border:none;border-radius:var(--r);cursor:pointer;transition:background .15s}
+.pin-btn:hover{background:var(--ice2)}
+@keyframes pinShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 </style>
 </head>
 <body>
+
+<!-- PIN GATE -->
+<div id="pin-gate">
+  <div class="pin-box">
+    <div class="pin-title">Movistar Arena</div>
+    <div class="pin-sub">Sistema de sorteos · RRHH</div>
+    <input class="pin-input" id="pin-input" type="password" maxlength="10" placeholder="••••" autocomplete="off" onkeydown="if(event.key==='Enter')checkPin()">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="pin-btn" onclick="checkPin()">Ingresar</button>
+  </div>
+</div>
 
 <!-- TOPBAR -->
 <header class="tb">
@@ -405,78 +561,62 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <!-- KPI row -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
-    <div class="stat"><div class="stat-l">Eventos</div><div class="stat-v" style="color:var(--ice2)" id="ds-ev">0</div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--ice),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Participantes</div><div class="stat-v" style="color:var(--white)" id="ds-part">0</div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.3),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Ganadores</div><div class="stat-v" style="color:var(--amber)" id="ds-gan">0</div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Mails enviados</div><div class="stat-v" style="color:var(--green)" id="ds-env">0</div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--green),transparent)"></div></div>
+    <div class="stat"><div class="stat-l">Eventos</div><div class="stat-v" style="color:var(--ice2)" id="ds-ev">0</div><div class="stat-sub" id="ds-ev-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--ice),transparent)"></div></div>
+    <div class="stat"><div class="stat-l">Inscriptos</div><div class="stat-v" style="color:var(--white)" id="ds-part">0</div><div class="stat-sub" id="ds-part-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.3),transparent)"></div></div>
+    <div class="stat"><div class="stat-l">Ganadores</div><div class="stat-v" style="color:var(--amber)" id="ds-gan">0</div><div class="stat-sub" id="ds-gan-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div></div>
+    <div class="stat"><div class="stat-l">Tickets</div><div class="stat-v" style="color:var(--green)" id="ds-tick">0</div><div class="stat-sub" id="ds-tick-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--green),transparent)"></div></div>
   </div>
 
   <!-- CHARTS ROW -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px" id="charts-row">
+  <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:14px" id="charts-row">
 
-    <!-- Chart 1: Tickets entregados (donut) -->
-    <div class="card" style="padding:14px 16px;position:relative;display:flex;flex-direction:column;align-items:center">
-      <div class="ct" style="width:100%">Tickets entregados</div>
-      <div style="font-size:10px;color:var(--gray3);margin-bottom:10px;width:100%">Entradas entregadas a ganadores</div>
-      <div style="position:relative;display:flex;align-items:center;justify-content:center">
-        <canvas id="chart-tickets" width="120" height="120" style="display:block"></canvas>
-        <div id="tt-tickets" class="chart-tt" style="display:none"></div>
-        <div style="position:absolute;text-align:center;pointer-events:none">
-          <div style="font-family:var(--fd);font-size:36px;font-weight:700;line-height:1;color:var(--white)" id="tickets-num">0</div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-top:2px">tickets</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:14px;margin-top:10px;justify-content:center;width:100%">
-        <div style="text-align:center">
-          <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--green)" id="tickets-env">0</div>
-          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">enviados</div>
-        </div>
-        <div style="width:1px;background:var(--line)"></div>
-        <div style="text-align:center">
-          <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--amber)" id="tickets-pend">0</div>
-          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">pendientes</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chart 2: Leaderboard colaboradores -->
-    <div class="card" style="padding:14px 16px;overflow:hidden">
+    <!-- Leaderboard (izquierda, más ancho) -->
+    <div class="card" style="padding:16px;overflow:hidden">
       <div class="fb" style="margin-bottom:8px">
         <div class="ct" style="margin:0">Top colaboradores</div>
         <div style="font-size:9px;color:var(--gray3)">veces ganadas</div>
       </div>
-      <div id="leaderboard-list"><div class="empty" style="padding:20px 0"><div class="empty-txt">Sin datos</div></div></div>
+      <div id="leaderboard-list"><div class="empty" style="padding:24px 0"><div class="empty-txt">Sin datos</div></div></div>
     </div>
 
-    <!-- Chart 3: Tasa de participación -->
-    <div class="card" style="padding:14px 16px;position:relative">
-      <div class="ct">Tasa de participación</div>
-      <div style="font-size:10px;color:var(--gray3);margin-bottom:12px">% de empleados que participaron</div>
-      <div id="tasa-content">
-        <!-- Main stat -->
-        <div style="text-align:center;margin-bottom:14px">
-          <div style="font-family:var(--fd);font-size:56px;font-weight:700;line-height:1;color:var(--ice2)" id="tasa-pct">—</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-top:4px">participación</div>
-        </div>
-        <!-- Progress bar -->
-        <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden;margin-bottom:12px">
-          <div id="tasa-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--ice),var(--ice2));border-radius:3px;transition:width .8s ease"></div>
-        </div>
-        <!-- Stats row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
-          <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:var(--rsm);padding:8px 4px">
-            <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--ice2)" id="tasa-ganaron">0</div>
-            <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">ganaron</div>
-          </div>
-          <div style="background:rgba(255,61,90,0.06);border:1px solid rgba(255,61,90,0.12);border-radius:var(--rsm);padding:8px 4px">
-            <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--red)" id="tasa-nunca">0</div>
-            <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">nunca</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--rsm);padding:8px 4px">
-            <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--white)" id="tasa-total">0</div>
-            <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">total</div>
+    <!-- Tickets entregados (donut) -->
+    <div class="card" style="padding:16px;display:flex;flex-direction:column">
+      <div class="ct" style="margin-bottom:14px">Tickets entregados</div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+        <div style="position:relative;width:130px;height:130px;flex-shrink:0">
+          <canvas id="chart-tickets" style="display:block;width:130px;height:130px"></canvas>
+          <div id="tt-tickets" class="chart-tt" style="display:none"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+            <div style="font-family:var(--fd);font-size:34px;font-weight:700;line-height:1;color:var(--white)" id="tickets-num">0</div>
+            <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-top:3px">total</div>
           </div>
         </div>
+        <div style="display:flex;gap:16px;justify-content:center;width:100%">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:7px;height:7px;border-radius:50%;background:rgba(0,240,160,0.9);flex-shrink:0"></div>
+            <div>
+              <div style="font-family:var(--fd);font-size:17px;font-weight:700;color:var(--green);line-height:1" id="tickets-env">0</div>
+              <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">enviados</div>
+            </div>
+          </div>
+          <div style="width:1px;background:var(--line);align-self:stretch"></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:7px;height:7px;border-radius:50%;background:rgba(255,176,32,0.85);flex-shrink:0"></div>
+            <div>
+              <div style="font-family:var(--fd);font-size:17px;font-weight:700;color:var(--amber);line-height:1" id="tickets-pend">0</div>
+              <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">pendientes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span id="tickets-total" style="display:none">0</span>
+    </div>
+
+    <!-- Show activo -->
+    <div class="card" style="padding:16px;display:flex;flex-direction:column">
+      <div class="ct" style="margin-bottom:10px">Show activo</div>
+      <div id="active-ev-card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+        <div class="empty" style="padding:24px 0"><div class="empty-txt">Sin evento activo</div></div>
       </div>
     </div>
 
@@ -521,14 +661,14 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
           <div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
           <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red)">Mas frecuentes</div>
         </div>
-        <div id="freq-top"><div class="empty" style="padding:12px"><div class="empty-txt">Sin datos</div></div></div>
+        <div id="freq-top"><div class="empty" style="padding:24px 0"><div class="empty-txt">Sin datos</div></div></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
           <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
           <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green)">Menos frecuentes</div>
         </div>
-        <div id="freq-bot"><div class="empty" style="padding:12px"><div class="empty-txt">Sin datos</div></div></div>
+        <div id="freq-bot"><div class="empty" style="padding:24px 0"><div class="empty-txt">Sin datos</div></div></div>
       </div>
     </div>
     <div style="margin-top:12px;font-size:10px;color:var(--gray3);text-align:center" id="freq-note"></div>
@@ -597,6 +737,27 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-2">
   <div class="ph"><div class="ph-eye">Paso 2</div><div class="ph-t">Sorteo</div><div class="ph-d" id="wd2"></div></div>
 
+  <!-- Contexto del evento -->
+  <div id="sort-ctx" style="display:none;border:1px solid rgba(0,212,255,0.15);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;background:rgba(0,212,255,0.04)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--ice);margin-bottom:2px">Show</div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.5px" id="sort-ctx-show"></div>
+        <div style="font-size:11px;color:var(--gray3);margin-top:2px" id="sort-ctx-fecha"></div>
+      </div>
+      <div style="display:flex;gap:12px;flex-shrink:0">
+        <div style="text-align:center;padding:8px 14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);border-radius:var(--rsm)">
+          <div style="font-family:var(--fd);font-size:28px;font-weight:700;color:var(--ice2);line-height:1" id="sort-ctx-cant">0</div>
+          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px">a sortear</div>
+        </div>
+        <div style="text-align:center;padding:8px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:var(--rsm)">
+          <div style="font-family:var(--fd);font-size:28px;font-weight:700;color:var(--white);line-height:1" id="sort-ctx-aptos">0</div>
+          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px">habilitados</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="sort-al" style="display:none;margin-bottom:10px"><div class="al aii" id="sort-al-txt"></div></div>
 
   <div class="drum-wrap">
@@ -612,14 +773,14 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <div id="res-sort" style="display:none">
     <div class="card">
-      <div class="ct">Resultado</div>
+      <div class="ct">Resultado del sorteo</div>
       <div id="res-list"></div>
     </div>
   </div>
 
   <div class="nav-btns">
     <button class="btn bo" onclick="goStep(1)">← Inscriptos</button>
-    <button class="btn bp" id="btn-to-gan" style="display:none" onclick="goStep(3)">Ver ganadores →</button>
+    <button class="btn bp" id="btn-to-gan" style="display:none" onclick="goStep(3)">Confirmar ganadores →</button>
   </div>
 </div>
 
@@ -629,7 +790,12 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <div id="gan-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">◈</div><div class="empty-txt">Realizá el sorteo primero</div></div>
   <div id="gan-panel" style="display:none">
-    <div class="al aw" style="margin-bottom:9px">Revisá la lista antes de confirmar. Podés reemplazar o quitar personas.</div>
+    <!-- Contexto: show + quién recibe el mail -->
+    <div id="gan-ctx" style="border:1px solid rgba(255,176,32,0.2);border-radius:var(--r);padding:12px 16px;margin-bottom:10px;background:rgba(255,176,32,0.04)">
+      <div style="font-size:11px;color:var(--amber);font-weight:600;margin-bottom:4px">✉ Antes de confirmar:</div>
+      <div style="font-size:12px;color:var(--white)" id="gan-ctx-txt">Revisá la lista. Al confirmar, estas personas quedarán registradas como ganadores.</div>
+      <div style="font-size:11px;color:var(--gray3);margin-top:4px" id="gan-ctx-sub"></div>
+    </div>
     <div class="card">
       <div class="fb" style="margin-bottom:10px">
         <div class="ct" style="margin:0">Lista a confirmar</div>
@@ -638,7 +804,13 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <div id="gan-list"></div>
     </div>
     <div class="card" id="gan-excl" style="display:none"><div class="ct">Excluidos</div><div id="gan-excl-txt"></div></div>
-    <button class="btn bp" onclick="confirmarGanadores()">✓ Confirmar ganadores</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid rgba(0,212,255,0.18);border-radius:var(--r);background:rgba(0,212,255,0.04);margin-bottom:12px" id="gan-confirm-banner">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--white)" id="gan-confirm-txt">Confirmá para guardar en Sheets y actualizar el Tracking</div>
+        <div style="font-size:10px;color:var(--gray3);margin-top:2px">Esta acción no se puede deshacer fácilmente</div>
+      </div>
+      <button class="btn bp" onclick="confirmarGanadores()" style="flex-shrink:0">✓ Confirmar ganadores</button>
+    </div>
   </div>
 
   <hr>
@@ -659,7 +831,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
 <!-- ══ WIZARD PASO 4: MAILS ══ -->
 <div class="pg" id="pg-4">
-  <div class="ph"><div class="ph-eye">Paso 4</div><div class="ph-t">Enviar mails</div><div class="ph-d">Cargá los PDFs y enviá las entradas</div></div>
+  <div class="ph"><div class="ph-eye">Paso 4</div><div class="ph-t">Enviar mails</div><div class="ph-d">Personalizá el mail y enviá las entradas</div></div>
 
   <div id="mail-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">✉</div><div class="empty-txt">Confirmá los ganadores primero</div></div>
   <div id="mail-panel" style="display:none">
@@ -679,16 +851,6 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     </div>
 
     <div class="card">
-      <div class="ct">PDFs de entradas</div>
-      <div class="al aii" style="margin-bottom:9px">Subí los PDFs en orden. Si hay 3 ganadores con 2 entradas c/u → 6 PDFs. Los primeros 2 van al ganador 1, etc.</div>
-      <div class="uz" id="pdf-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="dropPDFs(event)">
-        <input type="file" accept=".pdf,image/*" multiple onchange="cargarPDFs(event.target.files)">
-        <div class="uz-ic">⎗</div><div class="uz-l">Arrastrá los PDFs o hacé clic</div><div class="uz-s">Varios a la vez · un PDF por entrada</div>
-      </div>
-      <div id="pdf-grid" class="pdfgrid"></div>
-    </div>
-
-    <div class="card">
       <div class="ct">Plantilla del mail</div>
       <div class="field"><label>Asunto</label><input id="mail-asunto" value="¡Ganaste entradas para {evento}! 🎟"></div>
       <div class="field"><label>Cuerpo — variables: {nombre} {evento} {venue} {fecha}</label>
@@ -699,11 +861,9 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 📅 {fecha}
 📍 {venue}
 
-Te adjuntamos tu entrada.
-
 ¡Nos vemos en el show! 🎶</textarea>
       </div>
-      <button class="btn bo bsm" onclick="renderMails()">↺ Actualizar preview</button>
+      <div style="font-size:10px;color:var(--gray3);display:flex;align-items:center;gap:5px;margin-top:6px"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>Preview en tiempo real</div>
     </div>
 
     <div class="card">
@@ -776,36 +936,49 @@ Te adjuntamos tu entrada.
 <div class="mbg" id="modal-ev">
   <div class="modal" style="width:520px">
     <div class="modal-t">Nuevo evento</div>
-    <div style="margin-bottom:12px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-bottom:6px">Tipo de evento</div>
-      <div style="display:flex;gap:7px">
-        <button type="button" class="btn bsm" id="ev-tipo-nuevo" onclick="setEvTipo('nuevo')" style="flex:1;justify-content:center;background:var(--ice);color:var(--bg);border:none">Show nuevo</button>
+
+    <!-- Sección 1: Show -->
+    <div style="border:1px solid var(--line);border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px;background:rgba(255,255,255,0.02)">
+      <div class="ct" style="margin-bottom:10px">Show</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button type="button" class="btn bp bsm" id="ev-tipo-nuevo" onclick="setEvTipo('nuevo')" style="flex:1;justify-content:center">Show nuevo</button>
         <button type="button" class="btn bo bsm" id="ev-tipo-fecha" onclick="setEvTipo('fecha')" style="flex:1;justify-content:center">Nueva fecha de show existente</button>
       </div>
-    </div>
-    <div id="ev-showbase-wrap" style="display:none">
-      <div class="field"><label>Show base *</label>
-        <select id="ev-showbase" onchange="autoFillShowBase()"><option value="">— Seleccionar show —</option></select>
+      <div id="ev-showbase-wrap" style="display:none">
+        <div class="field" style="margin-bottom:0"><label>Show existente *</label>
+          <select id="ev-showbase" onchange="autoFillShowBase()"><option value="">— Seleccionar —</option></select>
+        </div>
+      </div>
+      <div id="ev-shownuevo-wrap">
+        <div class="field" style="margin-bottom:0"><label>Artista / Show *</label><input id="ev-show" placeholder="Ej: Coldplay"></div>
       </div>
     </div>
-    <div id="ev-shownuevo-wrap">
-      <div class="field"><label>Artista / Show *</label><input id="ev-show" placeholder="Ej: Coldplay"></div>
+
+    <!-- Sección 2: Fecha y lugar -->
+    <div style="border:1px solid var(--line);border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px;background:rgba(255,255,255,0.02)">
+      <div class="ct" style="margin-bottom:10px">Fecha y lugar</div>
+      <div class="field"><label>Nombre del evento *</label><input id="ev-nombre" placeholder="Ej: Coldplay — Fecha 1"></div>
+      <div class="r2">
+        <div class="field"><label>Fecha *</label><input id="ev-fecha" type="date"></div>
+        <div class="field"><label>Horario</label><input id="ev-hora" type="time" value="21:00"></div>
+      </div>
+      <div class="field" style="margin-bottom:0"><label>Venue</label><input id="ev-venue" value="Movistar Arena, Buenos Aires"></div>
     </div>
-    <div class="field"><label>Nombre del evento *</label><input id="ev-nombre" placeholder="Ej: Coldplay — Fecha 1"></div>
-    <div class="r2">
-      <div class="field"><label>Fecha *</label><input id="ev-fecha" type="date"></div>
-      <div class="field"><label>Horario</label><input id="ev-hora" type="time" value="21:00"></div>
+
+    <!-- Sección 3: Sorteo -->
+    <div style="border:1px solid var(--line);border-radius:var(--rsm);padding:12px 14px;margin-bottom:12px;background:rgba(255,255,255,0.02)">
+      <div class="ct" style="margin-bottom:10px">Sorteo</div>
+      <div class="r2">
+        <div class="field"><label>Ganadores *</label><input id="ev-cant" type="number" min="1" value="2"></div>
+        <div class="field"><label>Entradas por ganador *</label><input id="ev-exg" type="number" min="1" value="1"></div>
+      </div>
+      <div class="field"><label>Link del formulario de inscripción</label><input id="ev-form" placeholder="https://forms.gle/..."></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:var(--rsm);border:1px solid var(--line);background:rgba(255,255,255,0.02);margin-bottom:0">
+        <div><div style="font-size:12px;font-weight:600">Regla anti-repetición</div><div style="font-size:10px;color:var(--gray3);margin-top:1px">Excluir quien ya ganó en cualquier fecha de este show</div></div>
+        <label class="sw-w"><input type="checkbox" id="ev-anti" checked><span class="sw-t"><span class="sw-th"></span></span></label>
+      </div>
     </div>
-    <div class="r2">
-      <div class="field"><label>Ganadores *</label><input id="ev-cant" type="number" min="1" value="2"></div>
-      <div class="field"><label>Entradas por ganador *</label><input id="ev-exg" type="number" min="1" value="1"></div>
-    </div>
-    <div class="field"><label>Venue</label><input id="ev-venue" value="Movistar Arena, Buenos Aires"></div>
-    <div class="field"><label>Link del Google Form (opcional)</label><input id="ev-form" placeholder="https://forms.gle/..."></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--rsm);border:1px solid var(--line);background:rgba(255,255,255,0.03)">
-      <div><div style="font-size:12px;font-weight:600">Regla anti-repeticion</div><div style="font-size:10px;color:var(--gray3);margin-top:1px">Excluir quien ya gano en cualquier fecha de este show</div></div>
-      <label class="sw-w"><input type="checkbox" id="ev-anti" checked><span class="sw-t"><span class="sw-th"></span></span></label>
-    </div>
+
     <div class="modal-acts">
       <button class="btn bo" onclick="closeModal('modal-ev')">Cancelar</button>
       <button class="btn bp" onclick="crearEvento()">Crear evento</button>
@@ -901,7 +1074,9 @@ let FORM_BASE_URL=localStorage.getItem("form_base_url")||"https://TU-USUARIO.git
 async function api(data){try{const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});return await r.json();}catch(e){return{ok:false,error:e.message};}}
 
 // STATE
-const S={eventos:[],participantes:[],ganadores:[],sorteo:{evId:null,lista:[]},pdfs:[],csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
+const S={eventos:[],participantes:[],ganadores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
+let _mailPreviewTimer=null;
+function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{
   try{
     // Participantes are session-only (too large for localStorage)
@@ -912,7 +1087,6 @@ const save=()=>{
       sorteo:S.sorteo,
       evActivo:S.evActivo,
       ticketsBase:S.ticketsBase||0,
-      pdfs:[]
     };
     localStorage.setItem("ma_v6",JSON.stringify(toSave));
   }catch(e){
@@ -992,6 +1166,8 @@ function goStep(n){
     if(!el)return;
     el.classList.toggle("on",i===n);
     el.classList.toggle("done",i<n);
+    const numEl=el.querySelector(".ws-n");
+    if(numEl)numEl.textContent=i<n?"✓":String(i);
   });
   if(n===1)renderStep1();
   if(n===2)renderStep2();
@@ -1075,12 +1251,14 @@ function crearEvento(){
     formUrl:document.getElementById("ev-form").value.trim(),
     creadoEn:new Date().toISOString()
   });
+  S.eventos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  S.evActivo=id;
   save();
   closeModal("modal-ev");
-  toast("Evento creado");
-  S.evActivo=id;
+  toast("Evento creado — iniciando wizard");
   updateTopbar();
   renderDash();
+  viewWiz();
 }
 function abrirEdit(id){
   const ev=S.eventos.find(e=>e.id===id);
@@ -1112,6 +1290,7 @@ function guardarEvento(){
   ev.venue=document.getElementById("edit-venue").value.trim();
   ev.formUrl=document.getElementById("edit-form").value.trim();
   ev.antiRep=document.getElementById("edit-anti").checked;
+  S.eventos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
   save();
   closeModal("modal-edit");
   toast("Evento actualizado");
@@ -1210,7 +1389,8 @@ function fmtMonth(key){
   try{
     const[y,m]=key.split("-");
     const d=new Date(parseInt(y),parseInt(m)-1,1);
-    return d.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+    const abbr=d.toLocaleDateString("es-AR",{month:"short"}).replace(".","").slice(0,3).toUpperCase();
+    return abbr+" '"+String(parseInt(y)).slice(2);
   }catch(e){return key;}
 }
 
@@ -1219,17 +1399,13 @@ function renderMonthTabs(){
   const now=new Date();
   const nowKey=now.getFullYear()+"-"+(String(now.getMonth()+1).padStart(2,"0"));
 
-  // Get all months from events
   const monthSet=new Set(S.eventos.map(e=>getMonthKey(e.fecha)));
-  // Sort months: past desc, then current, then future asc
   const months=[...monthSet].sort((a,b)=>a.localeCompare(b));
 
-  // Default to current month if exists, else nearest
   if(!_activeMonth||!months.includes(_activeMonth)){
     _activeMonth=months.includes(nowKey)?nowKey:months[months.length-1];
   }
 
-  // Render tabs
   const tabsEl=document.getElementById("month-tabs");
   if(!tabsEl)return;
   tabsEl.innerHTML=months.map(m=>{
@@ -1238,14 +1414,12 @@ function renderMonthTabs(){
     const isActive=m===_activeMonth;
     const label=fmtMonth(m);
     const evCount=S.eventos.filter(e=>getMonthKey(e.fecha)===m).length;
-    return `<button onclick="setActiveMonth('${m}')" style="
-      flex-shrink:0;padding:5px 12px;border-radius:20px;cursor:pointer;
-      font-family:var(--fb);font-size:11px;font-weight:600;border:none;
-      white-space:nowrap;transition:all .15s;
-      background:${isActive?"var(--ice)":"rgba(255,255,255,0.05)"};
-      color:${isActive?"var(--bg)":isPast?"var(--gray3)":"var(--gray2)"};
-      opacity:${isPast&&!isActive?0.7:1};
-    ">${isNow?"● ":""}${label} <span style="font-size:9px;opacity:.7">(${evCount})</span></button>`;
+    let cls="month-tab";
+    if(isActive)cls+=" active";
+    else if(isNow)cls+=" now";
+    else if(isPast)cls+=" past";
+    else cls+=" future";
+    return `<button class="${cls}" onclick="setActiveMonth('${m}')">${isNow&&!isActive?`<span class="month-tab-dot"></span>`:""}${label}<span class="month-tab-cnt">${evCount}</span></button>`;
   }).join("");
 
   renderEvsByMonth(_activeMonth);
@@ -1256,62 +1430,89 @@ function setActiveMonth(m){
   renderMonthTabs();
 }
 
+function _evStatus(ev){
+  const g=S.ganadores.filter(x=>x.evId===ev.id);
+  const env=g.filter(x=>x.estado==="enviado").length;
+  if(!g.length)return "pend";
+  if(env===g.length)return "done";
+  return "partial";
+}
+function _evBadge(ev){
+  const g=S.ganadores.filter(x=>x.evId===ev.id);
+  const env=g.filter(x=>x.estado==="enviado").length;
+  if(!g.length){
+    const p=S.participantes.filter(x=>x.evId===ev.id).length;
+    return p?`<span class="ev-badge ev-badge-pend">Sin sortear</span>`:`<span class="ev-badge ev-badge-pend">Sin inscriptos</span>`;
+  }
+  if(env===g.length)return `<span class="ev-badge ev-badge-done">✓ Enviado</span>`;
+  if(env>0)return `<span class="ev-badge ev-badge-sort">${env}/${g.length} enviados</span>`;
+  return `<span class="ev-badge ev-badge-conf">Gan. confirmados</span>`;
+}
+
 function renderEvsByMonth(month){
   const cont=document.getElementById("dash-evs");
   if(!cont)return;
-  const evs=S.eventos.filter(e=>getMonthKey(e.fecha)===month);
+  const evs=S.eventos.filter(e=>getMonthKey(e.fecha)===month).sort((a,b)=>a.fecha.localeCompare(b.fecha));
   if(!evs.length){
-    cont.innerHTML='<div class="empty" style="padding:20px"><div class="empty-txt">Sin eventos este mes</div></div>';
+    cont.innerHTML='<div class="empty" style="padding:24px"><div class="empty-txt">Sin eventos este mes</div></div>';
     return;
   }
-  // Group by show within month
   const shows=[...new Set(evs.map(e=>e.show))];
   const _showExp=window._showExp||(window._showExp=new Set());
   const groups=shows.map(show=>{
-    const fechas=evs.filter(e=>e.show===show);
+    const fechas=evs.filter(e=>e.show===show).sort((a,b)=>a.fecha.localeCompare(b.fecha));
     const totalP=S.participantes.filter(x=>fechas.some(e=>e.id===x.evId)).length;
     const totalG=S.ganadores.filter(x=>fechas.some(e=>e.id===x.evId)).length;
     const totalEnv=S.ganadores.filter(x=>fechas.some(e=>e.id===x.evId)&&x.estado==="enviado").length;
-    const isExp=_showExp.has(show)||(fechas.length===1);
-    const fechasHTML=fechas.map(ev=>{
+    const isExp=_showExp.has(show);
+
+    const cardsHTML=fechas.map(ev=>{
       const p=S.participantes.filter(x=>x.evId===ev.id).length;
       const g=S.ganadores.filter(x=>x.evId===ev.id).length;
       const env=S.ganadores.filter(x=>x.evId===ev.id&&x.estado==="enviado").length;
       const act=S.evActivo===ev.id;
-      const eid=ev.id.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px 10px 44px;border-bottom:1px solid var(--line);cursor:pointer;background:${act?"rgba(0,212,255,0.07)":"transparent"};transition:background .15s" data-sel-ev="${ev.id}" onclick="selEvento(this.dataset.selEv)">
-        <div style="width:24px;height:24px;border-radius:50%;background:${act?"var(--ice)":"rgba(255,255,255,0.06)"};color:${act?"var(--bg)":"var(--gray3)"};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${act?"✓":"▶"}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:500;color:${act?"var(--ice2)":"var(--white)"}">${ev.nombre}</div>
-          <div style="font-size:10px;color:var(--gray3)">${fdL(ev.fecha)}${ev.hora?" · "+ev.hora:""}</div>
+      const st=_evStatus(ev);
+      let cls="ev-card";
+      if(act)cls+=" act";
+      else if(st==="done")cls+=" done";
+      else if(st==="partial")cls+=" partial";
+      return `<div class="${cls}" data-sel-ev="${ev.id}" onclick="selEvento(this.dataset.selEv)">
+        <div class="ev-card-bar"></div>
+        <div class="ev-card-icon">${act?"✓":"▶"}</div>
+        <div class="ev-card-main">
+          <div class="ev-card-name">${ev.nombre}</div>
+          <div class="ev-card-meta">${fdL(ev.fecha)}${ev.hora?" · "+ev.hora:""}</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:16px;color:var(--ice2)">${p}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">insc.</div></div>
-          <div style="width:1px;height:14px;background:var(--line)"></div>
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:16px;color:${g?"var(--green)":"var(--amber)"}">${g}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">gan.</div></div>
-          <div style="width:1px;height:14px;background:var(--line)"></div>
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:16px;color:var(--green)">${env}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">env.</div></div>
-          <button class="btn bo bsm" style="padding:2px 7px;font-size:10px" data-edit-ev="${ev.id}" onclick="event.stopPropagation();abrirEdit(this.dataset.editEv)">✎</button>
-          <button class="btn bo bsm" style="padding:2px 7px;font-size:10px;color:var(--ice2)" data-link-ev="${ev.id}" onclick="event.stopPropagation();copiarLinkForm(this.dataset.linkEv)" title="Copiar link">🔗</button>
+        <div class="ev-card-stats">
+          <div class="ev-cstat"><div class="ev-cstat-v" style="color:var(--ice2)">${p}</div><div class="ev-cstat-l">insc.</div></div>
+          <div class="ev-divider"></div>
+          <div class="ev-cstat"><div class="ev-cstat-v" style="color:${g?"var(--green)":"var(--gray3)"}">${g}</div><div class="ev-cstat-l">gan.</div></div>
+          <div class="ev-divider"></div>
+          <div class="ev-cstat"><div class="ev-cstat-v" style="color:${env&&env===g?"var(--green)":env?"var(--amber)":"var(--gray3)"}">${env}</div><div class="ev-cstat-l">env.</div></div>
+        </div>
+        ${_evBadge(ev)}
+        <div class="ev-card-btns">
+          <button class="btn bo bsm" style="padding:2px 8px;font-size:10px" data-edit-ev="${ev.id}" onclick="event.stopPropagation();abrirEdit(this.dataset.editEv)" title="Editar">✎</button>
+          <button class="btn bo bsm" style="padding:2px 8px;font-size:10px;color:var(--ice2)" data-link-ev="${ev.id}" onclick="event.stopPropagation();copiarLinkForm(this.dataset.linkEv)" title="Copiar link">🔗</button>
         </div>
       </div>`;
     }).join("");
-    return `<div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:8px;background:var(--bg2)">
-      <div onclick="toggleShow('${show}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;background:rgba(255,255,255,0.02)">
-        <div style="width:26px;height:26px;border-radius:4px;background:${isExp?"rgba(0,212,255,0.08)":"rgba(255,255,255,0.05)"};border:1px solid ${isExp?"var(--ice-line)":"var(--line)"};display:flex;align-items:center;justify-content:center;font-size:9px;color:${isExp?"var(--ice2)":"var(--gray3)"};font-weight:700">${isExp?"▲":"▼"}</div>
-        <div style="flex:1">
-          <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.5px">${show}</div>
-          <div style="font-size:10px;color:var(--gray3)">${fechas.length} fecha${fechas.length!==1?"s":""}</div>
-        </div>
-        <div style="display:flex;gap:10px;flex-shrink:0;align-items:center">
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--ice2)">${totalP}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">inscriptos</div></div>
-          <div style="width:1px;height:18px;background:var(--line)"></div>
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:${totalG?"var(--green)":"var(--amber)"}">${totalG}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">ganadores</div></div>
-          <div style="width:1px;height:18px;background:var(--line)"></div>
-          <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--green)">${totalEnv}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase">enviados</div></div>
+
+    const showAttr=show.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return `<div class="ev-group${isExp?" open":""}" data-show="${showAttr}">
+      <div class="ev-group-hd" onclick="toggleShow(this.closest('.ev-group').dataset.show)">
+        <div class="ev-group-chev">▼</div>
+        <div class="ev-group-info">
+          <div class="ev-group-title">${show}</div>
+          <div class="ev-group-sub">
+            <span>${fechas.length} fecha${fechas.length!==1?"s":""}</span>
+            ${totalP?`<span class="ev-group-sub-dot"></span><span style="color:var(--ice2)">${totalP} inscriptos</span>`:""}
+            ${totalG?`<span class="ev-group-sub-dot"></span><span style="color:${totalEnv===totalG?"var(--green)":"var(--amber)"}">${totalG} ganadores</span>`:""}
+            ${totalEnv?`<span class="ev-group-sub-dot"></span><span style="color:var(--green)">${totalEnv} enviados</span>`:""}
+          </div>
         </div>
       </div>
-      ${isExp?`<div>${fechasHTML}</div>`:""}
+      <div class="ev-group-body">${cardsHTML}</div>
     </div>`;
   }).join("");
   cont.innerHTML=groups;
@@ -1427,9 +1628,12 @@ function toggleColl(id){
 
 function toggleShow(show){
   window._showExp=window._showExp||new Set();
-  if(window._showExp.has(show))window._showExp.delete(show);
+  const isOpen=window._showExp.has(show);
+  if(isOpen)window._showExp.delete(show);
   else window._showExp.add(show);
-  renderDash();
+  document.querySelectorAll('.ev-group').forEach(el=>{
+    if(el.dataset.show===show)el.classList.toggle('open',!isOpen);
+  });
 }
 function selEvento(id){
   S.evActivo=id;
@@ -1442,10 +1646,49 @@ function selEvento(id){
 // DASHBOARD
 // ── CHARTS ────────────────────────────────────────────────
 
+function renderActiveEventCard(){
+  const el=document.getElementById("active-ev-card");
+  if(!el)return;
+  const ev=S.evActivo?S.eventos.find(e=>e.id===S.evActivo):null;
+  if(!ev){
+    el.innerHTML='<div style="text-align:center;padding:10px 0"><div style="font-size:11px;color:var(--gray3);margin-bottom:10px">Ningún show seleccionado</div><button class="btn bo bsm" onclick="viewDash()">Seleccionar show</button></div>';
+    return;
+  }
+  const p=S.participantes.filter(x=>x.evId===ev.id).length;
+  const g=S.ganadores.filter(x=>x.evId===ev.id).length;
+  const env=S.ganadores.filter(x=>x.evId===ev.id&&x.estado==="enviado").length;
+  const st=g===0?"sin-sortear":env===g?"completo":"pendiente";
+  const stLabel={"sin-sortear":"Sin sortear","pendiente":"Pendiente de envío","completo":"Completo"}[st];
+  const stColor={"sin-sortear":"var(--gray3)","pendiente":"var(--amber)","completo":"var(--green)"}[st];
+  el.innerHTML=`
+    <div style="border-left:3px solid var(--ice);padding-left:12px;margin-bottom:12px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ice);margin-bottom:3px">${ev.show||ev.nombre}</div>
+      <div style="font-family:var(--fd);font-size:16px;font-weight:700;color:var(--white);line-height:1.2">${ev.nombre}</div>
+      <div style="font-size:10px;color:var(--gray3);margin-top:3px">${fdL(ev.fecha)}${ev.hora?" · "+ev.hora:""}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+      <div style="text-align:center;padding:7px 4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:var(--rsm)">
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--ice2)">${p}</div>
+        <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">inscriptos</div>
+      </div>
+      <div style="text-align:center;padding:7px 4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:var(--rsm)">
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:${g?"var(--amber)":"var(--gray3)"}">${g}</div>
+        <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">ganadores</div>
+      </div>
+      <div style="text-align:center;padding:7px 4px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:var(--rsm)">
+        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:${env&&env===g?"var(--green)":env?"var(--amber)":"var(--gray3)"}">${env}</div>
+        <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;margin-top:1px">enviados</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span style="font-size:10px;font-weight:600;color:${stColor}">${stLabel}</span>
+      <button class="btn bp bsm" onclick="viewWiz()">Ir al sorteo →</button>
+    </div>`;
+}
+
 function drawCharts(){
   drawTickets();
   renderLeaderboard();
-  renderTasa();
 }
 
 function cvSetup(id,H){
@@ -1863,9 +2106,9 @@ async function importarDesdeTracking(silente){
       return;
     }
 
-    // Always rebuild from scratch - Tracking is source of truth
-    S.ganadores=[];
-    S.eventos=[];
+    // Preserve local events/ganadores, rebuild only tracking-sourced ones
+    S.ganadores=S.ganadores.filter(function(g){return !g._historico;});
+    S.eventos=S.eventos.filter(function(e){return !e._fromTracking;});
 
     let totalGan=0;
     cols.forEach(function(col){
@@ -2028,11 +2271,45 @@ function renderLeaderboard(){
   }).join("");
 }
 
+function animateStat(id,target){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.remove("counting");
+  void el.offsetWidth;
+  el.classList.add("counting");
+  const duration=600,start=performance.now();
+  const from=parseInt(el.textContent)||0;
+  function step(now){
+    const p=Math.min((now-start)/duration,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(target-from)*ease);
+    if(p<1)requestAnimationFrame(step);
+    else{el.textContent=target;el.classList.remove("counting");}
+  }
+  requestAnimationFrame(step);
+}
 function renderDash(){
-  document.getElementById("ds-ev").textContent=S.eventos.length;
-  document.getElementById("ds-part").textContent=S.participantes.length;
-  document.getElementById("ds-gan").textContent=S.ganadores.length;
-  document.getElementById("ds-env").textContent=S.ganadores.filter(g=>g.estado==="enviado").length;
+  const totalEv=S.eventos.length;
+  const totalPart=S.participantes.length;
+  const totalGan=S.ganadores.length;
+  const totalTick=S.ganadores.reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
+  const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
+  animateStat("ds-ev",totalEv);
+  animateStat("ds-part",totalPart);
+  animateStat("ds-gan",totalGan);
+  animateStat("ds-tick",totalTick);
+  // Subtextos KPI
+  const shows=[...new Set(S.eventos.map(e=>e.show))].length;
+  const evSub=document.getElementById("ds-ev-sub");
+  if(evSub)evSub.textContent=totalEv?(shows===totalEv?totalEv+" fechas":shows+" show"+(shows!==1?"s":"")+" · "+totalEv+" fecha"+(totalEv!==1?"s":"")):"";
+  const partSub=document.getElementById("ds-part-sub");
+  if(partSub)partSub.textContent=totalEv&&totalPart?Math.round(totalPart/totalEv)+" prom. por evento":"";
+  const ganSub=document.getElementById("ds-gan-sub");
+  if(ganSub)ganSub.textContent=totalPart&&totalGan?Math.round(totalGan/totalPart*100)+"% de inscriptos":"";
+  const tickSub=document.getElementById("ds-tick-sub");
+  if(tickSub)tickSub.textContent=totalTick?(tickEnv===totalTick?"todos entregados":tickEnv+" entregados · "+(totalTick-tickEnv)+" pend."):"";
+  // Show activo card
+  renderActiveEventCard();
   // Storage health check
   try{
     const stored=JSON.parse(localStorage.getItem("ma_v6")||"{}");
@@ -2050,7 +2327,6 @@ function renderDash(){
 
   // Charts
   setTimeout(drawCharts, 50);
-  setTimeout(renderTasa,100);
 
   // Frecuencia
   renderFreq();
@@ -2062,7 +2338,7 @@ function renderDash(){
   const ult=S.ganadores.slice(-5).reverse();
   document.getElementById("dash-ult").innerHTML=ult.length
     ?ult.map(g=>{const ev=S.eventos.find(e=>e.id===g.evId);const show=ev?ev.show:g.evNombre;return`<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r);border:1px solid var(--line2);background:rgba(255,255,255,0.03);margin-bottom:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(0,240,160,0.5)"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--white)">${g.nombre}</div><div style="font-size:10px;color:var(--gray2);margin-top:1px">${g.email}</div><div style="margin-top:3px"><span style="font-size:9px;padding:2px 7px;border-radius:3px;background:rgba(0,212,255,0.1);color:var(--ice2);border:1px solid rgba(0,212,255,0.15)">${show}</span></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:var(--gray2);font-weight:500">${fd(g.fechaGano)}</div><div style="font-size:9px;color:var(--green);margin-top:2px">Ganador</div></div></div>`;}).join("")
-    :'<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';
+    :'<div class="empty" style="padding:24px 0"><div class="empty-txt">Sin sorteos</div></div>';
 
   renderHC();
 }
@@ -2236,16 +2512,31 @@ function renderStep2(){
   const todos=S.participantes.filter(p=>p.evId===S.evActivo);
   const aptos=todos.filter(p=>!ganoPrevio(p,ev));
   const bloq=todos.length-aptos.length;
+
+  // Context card
+  const ctxEl=document.getElementById("sort-ctx");
+  if(ctxEl){
+    ctxEl.style.display="block";
+    const showEl=document.getElementById("sort-ctx-show");
+    const fechaEl=document.getElementById("sort-ctx-fecha");
+    const cantEl=document.getElementById("sort-ctx-cant");
+    const aptosEl=document.getElementById("sort-ctx-aptos");
+    if(showEl)showEl.textContent=ev.show||ev.nombre;
+    if(fechaEl)fechaEl.textContent=fdL(ev.fecha)+(ev.hora?" · "+ev.hora:"")+(ev.venue?" · "+ev.venue:"");
+    if(cantEl)cantEl.textContent=ev.cantidad;
+    if(aptosEl)aptosEl.textContent=aptos.length;
+  }
+
   const alWrap=document.getElementById("sort-al");
   const alTxt=document.getElementById("sort-al-txt");
   alWrap.style.display="block";
   if(!aptos.length){
     alTxt.className="al ad";
-    alTxt.innerHTML="Sin participantes aptos. "+bloq+" excluidos.";
+    alTxt.innerHTML="Sin participantes aptos. "+bloq+" excluidos por la regla anti-repetición.";
     document.getElementById("btn-sort").disabled=true;
   } else {
     alTxt.className="al aii";
-    alTxt.innerHTML="<strong>"+aptos.length+"</strong> habilitados"+(bloq?" · <span style='color:var(--red)'>"+bloq+" excluidos</span>":"")+" · se sortean <strong>"+ev.cantidad+"</strong>";
+    alTxt.innerHTML="<strong>"+aptos.length+"</strong> habilitados"+(bloq?" · <span style='color:var(--red)'>"+bloq+" excluidos por anti-repetición</span>":"");
     document.getElementById("btn-sort").disabled=false;
   }
   if(S.sorteo.evId===S.evActivo&&S.sorteo.lista.length){
@@ -2261,6 +2552,20 @@ function renderStep2(){
     document.getElementById("drum-sub").textContent="Listo para sortear";
   }
 }
+function spawnSparks(wrap){
+  const rect=wrap.getBoundingClientRect();
+  const cx=rect.left+rect.width/2+window.scrollX;
+  const cy=rect.top+rect.height/2+window.scrollY;
+  for(let i=0;i<14;i++){
+    const s=document.createElement("div");
+    s.className="spark";
+    const angle=Math.random()*Math.PI*2;
+    const dist=55+Math.random()*90;
+    s.style.cssText="position:absolute;left:"+cx+"px;top:"+cy+"px;--tx:"+Math.cos(angle)*dist+"px;--ty:"+Math.sin(angle)*dist+"px;animation-delay:"+(Math.random()*0.15)+"s;background:"+(Math.random()>.5?"var(--ice)":"#fff");
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),950);
+  }
+}
 function ejecutarSorteo(){
   const ev=S.eventos.find(e=>e.id===S.evActivo);
   if(!ev)return;
@@ -2268,11 +2573,13 @@ function ejecutarSorteo(){
   if(!aptos.length)return;
   document.getElementById("btn-sort").disabled=true;
   const drum=document.getElementById("drum"),sub=document.getElementById("drum-sub");
+  const wrap=document.querySelector(".drum-wrap");
   const cant=Math.min(ev.cantidad,aptos.length);
   let gans=[],idx=0;
   function uno(){
     if(idx>=cant){
       drum.classList.remove("spin");
+      wrap.classList.remove("spinning");
       S.sorteo={evId:S.evActivo,lista:gans.map(g=>({...g,_ed:false}))};
       mostrarRes(gans);
       document.getElementById("btn-sort").disabled=false;
@@ -2282,24 +2589,41 @@ function ejecutarSorteo(){
     }
     sub.textContent="Sorteando "+(idx+1)+" de "+cant+"…";
     const disp=aptos.filter(p=>!gans.includes(p));
-    drum.classList.add("spin"); let t=0;
+    wrap.classList.add("spinning");
+    drum.classList.remove("win","reveal");
+    drum.classList.add("spin");
+    let t=0;
+    const totalTicks=28+Math.floor(Math.random()*10);
     const iv=setInterval(()=>{
       drum.textContent=disp[Math.floor(Math.random()*disp.length)].nombre.split(" ")[0].toUpperCase();
       t++;
-      if(t>26){
-        clearInterval(iv);drum.classList.remove("spin");
+      if(t>totalTicks){
+        clearInterval(iv);
+        drum.classList.remove("spin");
+        wrap.classList.remove("spinning");
         const g=disp[Math.floor(Math.random()*disp.length)];
+        drum.classList.add("reveal");
         drum.textContent=g.nombre.split(" ")[0].toUpperCase();
-        gans.push(g);idx++;setTimeout(uno,950);
+        // Flash burst
+        const flash=document.createElement("div");
+        flash.className="drum-flash";
+        wrap.appendChild(flash);
+        setTimeout(()=>flash.remove(),800);
+        // Sparks
+        spawnSparks(wrap);
+        // Glow win
+        setTimeout(()=>{drum.classList.remove("reveal");drum.classList.add("win");},560);
+        gans.push(g);idx++;
+        setTimeout(uno,1100);
       }
-    },85);
+    },75);
   }
   uno();
 }
 function mostrarRes(gans){
   document.getElementById("res-sort").style.display="block";
   document.getElementById("res-list").innerHTML=gans.map((g,i)=>
-    `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+    `<div class="res-item-anim" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);animation-delay:${i*0.1}s">
       <span style="font-family:var(--fd);font-size:26px;color:var(--ice2);width:28px;opacity:.5">${i+1}</span>
       <div><div style="font-weight:500;font-size:13px">${g.nombre}</div><div style="font-size:10px;color:var(--gray2)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
     </div>`
@@ -2318,13 +2642,22 @@ function renderStep3(){
     document.getElementById("gan-vacio").style.display="none";
     document.getElementById("gan-panel").style.display="block";
     const ev=S.eventos.find(e=>e.id===evId);
+
+    // Update context
+    const ctxTxt=document.getElementById("gan-ctx-txt");
+    const ctxSub=document.getElementById("gan-ctx-sub");
+    const confTxt=document.getElementById("gan-confirm-txt");
+    if(ctxTxt)ctxTxt.innerHTML="<strong>"+lista.length+" ganador"+(lista.length!==1?"es":"")+"</strong> recibirán su entrada para <strong style='color:var(--ice2)'>"+(ev?.show||ev?.nombre||"")+"</strong> vía mail a su dirección @movistararena.com.ar";
+    if(ctxSub)ctxSub.textContent=ev?(fdL(ev.fecha)+(ev.hora?" · "+ev.hora:"")+(ev.entradasXGan>1?" · "+ev.entradasXGan+" entradas c/u":"")):"";
+    if(confTxt)confTxt.innerHTML="Confirmar los <strong>"+lista.length+" ganadores</strong> de <strong>"+(ev?.show||ev?.nombre||"")+"</strong>";
+
     document.getElementById("gan-list").innerHTML=lista.map((g,i)=>{
       const w=S.ganadores.filter(x=>x.email.toLowerCase()===g.email.toLowerCase()).length;
       return `<div class="wr${g._ed?" ed":""}">
         <div class="wr-n">${i+1}</div>
         <div class="wr-info">
-          <div class="wr-name">${g.nombre}${g._ed?" <span style='font-size:10px;color:var(--amber)'>editado</span>":""}${w>0?" <span style='font-size:9px;color:var(--amber)'>🏆"+w+" prev.</span>":""}</div>
-          <div class="wr-email">${g.email}${g.dni?" · DNI "+g.dni:""}</div>
+          <div class="wr-name">${g.nombre}${g._ed?' <span style="font-size:10px;color:var(--amber)">editado</span>':""}${w>0?' <span style="font-size:9px;color:var(--amber)">🏆'+w+' prev.</span>':""}</div>
+          <div class="wr-email" style="color:var(--ice2);font-size:11px">✉ ${g.email}${g.dni?" · <span style='color:var(--gray3)'>DNI "+g.dni+"</span>":""}</div>
         </div>
         <div class="wr-acts">
           <button class="btn ba bsm" onclick="abrirRemp(${i})">⇄</button>
@@ -2332,12 +2665,13 @@ function renderStep3(){
         </div>
       </div>`;
     }).join("");
+
     const ev2=S.eventos.find(e=>e.id===evId);
     const excl=S.participantes.filter(p=>p.evId===evId&&ganoPrevio(p,ev2));
     const ganExcl=document.getElementById("gan-excl");
     if(ev2?.antiRep!==false&&excl.length){
       ganExcl.style.display="block";
-      document.getElementById("gan-excl-txt").innerHTML='<div class="al aw">'+excl.length+' persona(s) excluidas por haber ganado este evento anteriormente.</div>';
+      document.getElementById("gan-excl-txt").innerHTML='<div class="al aw">'+excl.length+' persona(s) excluidas por haber ganado este show anteriormente (regla anti-repetición).</div>';
     } else ganExcl.style.display="none";
   } else {
     document.getElementById("gan-vacio").style.display="block";
@@ -2470,29 +2804,20 @@ function renderStep4(){
     document.getElementById("mail-ev-name").textContent=ev.nombre;
     document.getElementById("mail-ev-meta").textContent=fdL(ev.fecha)+" · "+(ev.venue||"Movistar Arena")+(ev.entradasXGan>1?" · "+ev.entradasXGan+" entradas/gan.":"");
   }
+  const asuntoEl=document.getElementById("mail-asunto");
+  if(asuntoEl&&!asuntoEl._mlive){
+    asuntoEl.addEventListener("input",_debounceMailPreview);
+    document.getElementById("mail-cuerpo").addEventListener("input",_debounceMailPreview);
+    asuntoEl._mlive=true;
+  }
   renderMails();
 }
-function dropPDFs(e){e.preventDefault();document.getElementById("pdf-zone").classList.remove("drag");cargarPDFs(e.dataTransfer.files);}
-function cargarPDFs(files){
-  Array.from(files).forEach(file=>{
-    if(!file.name.toLowerCase().endsWith(".pdf")&&!file.type.startsWith("image/"))return;
-    const reader=new FileReader();
-    reader.onload=ev=>{S.pdfs.push({name:file.name,data:ev.target.result});renderPDFGrid();renderMails();};
-    reader.readAsDataURL(file);
-  });
-}
-function renderPDFGrid(){
-  document.getElementById("pdf-grid").innerHTML=S.pdfs.map((p,i)=>
-    `<div class="pdfi"><div class="pdfi-n">${p.name}</div><div class="pdfi-del" onclick="quitarPDF(${i})">✕</div></div>`
-  ).join("");
-}
-function quitarPDF(i){S.pdfs.splice(i,1);renderPDFGrid();renderMails();}
+
 function renderMails(){
   const evId=S.evActivo;
   const ev=S.eventos.find(e=>e.id===evId);
   const gans=S.ganadores.filter(g=>g.evId===evId);
   if(!gans.length)return;
-  const exg=(ev?.entradasXGan)||1;
   const pend=gans.filter(g=>g.estado==="pendiente").length;
   const env=gans.length-pend;
   document.getElementById("mail-pend").textContent=pend;
@@ -2503,7 +2828,6 @@ function renderMails(){
   const list=document.getElementById("mail-list");
   list.innerHTML="";
   gans.forEach((g,i)=>{
-    const pdfsG=S.pdfs.slice(i*exg,i*exg+exg);
     const repl=t=>t.replace(/{nombre}/g,g.nombre).replace(/{evento}/g,g.evNombre||"").replace(/{venue}/g,g.venue||ev?.venue||"").replace(/{fecha}/g,ev?fdL(ev.fecha):"").replace(/{hora}/g,ev?.hora||"");
     const asunto=repl(asuntoTpl);
     const cuerpo=repl(cuerpoTpl);
@@ -2513,21 +2837,29 @@ function renderMails(){
     div.className="mc"+(enviado?" sent":"");
     div.id="mc-"+g.id;
     div.innerHTML=`
-      <div style="display:flex;align-items:flex-start;gap:9px">
-        <div id="chk-${g.id}" style="width:19px;height:19px;border-radius:4px;flex-shrink:0;margin-top:2px;cursor:pointer;border:1.5px solid ${enviado?"var(--green)":"var(--line2)"};background:${enviado?"var(--green)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);transition:all .15s">${enviado?"✓":""}</div>
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div id="chk-${g.id}" style="width:18px;height:18px;border-radius:4px;flex-shrink:0;margin-top:4px;cursor:pointer;border:1.5px solid ${enviado?"var(--green)":"var(--line2)"};background:${enviado?"var(--green)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);transition:all .15s">${enviado?"✓":""}</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:5px">
-            <div><div style="font-size:13px;font-weight:500">${g.nombre}</div><div style="font-size:10px;color:var(--gray2)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
-            <div style="display:flex;gap:5px;flex-shrink:0">
-              <span class="bic ${enviado?"bgi":"bai"}">${enviado?"✓ Enviado":"Pendiente"}</span>
-              <button class="cpbtn" id="btn-${bid}" data-bid="${bid}" onclick="copiar(this.dataset.bid,this)">Copiar</button>
+          <!-- Recipient header -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px">
+            <div>
+              <div style="font-size:14px;font-weight:600;color:${enviado?"var(--green)":"var(--white)"};line-height:1.2">${g.nombre}</div>
+              <div style="font-size:11px;color:var(--ice2);margin-top:3px;display:flex;align-items:center;gap:5px">
+                <span style="opacity:.5;font-size:10px">✉</span><span>${g.email}</span>
+              </div>
+              ${g.dni?`<div style="font-size:10px;color:var(--gray3);margin-top:1px">DNI: ${g.dni}</div>`:""}
             </div>
+            <span class="bic ${enviado?"bgi":"bai"}" style="flex-shrink:0;margin-top:2px">${enviado?"✓ Enviado":"Pendiente"}</span>
           </div>
-          <div style="font-size:10px;color:var(--gray3);margin-bottom:5px">Asunto: <span style="color:var(--gray2)">${asunto}</span></div>
-          <div class="mp" id="${bid}" contenteditable="true">${esc(cuerpo)}</div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">
-            ${pdfsG.length>0?pdfsG.map((p,j)=>`<a href="${p.data}" download="${p.name}" class="btn bg_ bsm">↓ Entrada ${exg>1?j+1:""}</a>`).join(""):`<span style="font-size:10px;color:var(--red)">⚠ Sin PDFs</span>`}
-            <button class="btn bo bsm" data-gid="${g.id}" onclick="toggleEnv(this.dataset.gid)">${enviado?"↩ Desmarcar":"✓ Marcar enviado"}</button>
+          <!-- Mail preview -->
+          <div style="padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--line);border-radius:var(--rsm);margin-bottom:8px">
+            <div style="font-size:10px;color:var(--gray3);margin-bottom:5px">Asunto: <span style="color:var(--gray2)">${asunto}</span></div>
+            <div class="mp" id="${bid}" contenteditable="true" style="font-size:11px;line-height:1.7">${esc(cuerpo)}</div>
+          </div>
+          <!-- Actions -->
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="cpbtn" id="btn-${bid}" data-bid="${bid}" onclick="copiar(this.dataset.bid,this)">Copiar cuerpo</button>
+            <button class="btn bo bsm" data-gid="${g.id}" onclick="toggleEnv(this.dataset.gid)">${enviado?"↩ Desmarcar enviado":"✓ Marcar como enviado"}</button>
           </div>
         </div>
       </div>`;
@@ -2615,18 +2947,36 @@ const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 function toast(msg,type="ok"){const el=document.getElementById("toast");el.className="toast show "+(type==="ok"?"tok":"twn");el.textContent=(type==="ok"?"✓  ":"⚠  ")+msg;setTimeout(()=>el.classList.remove("show"),3000);}
 function closeModal(id){document.getElementById(id).classList.remove("show");}
 
-// INIT
-load();
-// Always clear eventos and ganadores on load — Tracking is the source of truth
-S.eventos=[];
-S.ganadores=[];
-renderDash();
-updateTopbar();
-if(S.evActivo&&S.eventos.find(e=>e.id===S.evActivo)){
-  document.getElementById("wiz").style.display="none";
+// ── AUTH ──────────────────────────────────────────────────
+const PIN="1234";
+function checkPin(){
+  const inp=document.getElementById("pin-input");
+  if(inp.value===PIN){
+    sessionStorage.setItem("ma_auth","1");
+    const gate=document.getElementById("pin-gate");
+    gate.classList.add("out");
+    setTimeout(()=>gate.remove(),320);
+    startApp();
+  }else{
+    inp.classList.add("err");
+    document.getElementById("pin-error").textContent="PIN incorrecto";
+    inp.value="";
+    setTimeout(()=>{inp.classList.remove("err");document.getElementById("pin-error").textContent="";},1400);
+  }
 }
-// Auto-import from Tracking Ganadores on load
-setTimeout(function(){ importarDesdeTracking(true); }, 1000);
+function startApp(){
+  load();
+  renderDash();
+  updateTopbar();
+  setTimeout(function(){importarDesdeTracking(true);},1000);
+}
+// INIT
+if(sessionStorage.getItem("ma_auth")==="1"){
+  document.getElementById("pin-gate").remove();
+  startApp();
+}else{
+  setTimeout(()=>document.getElementById("pin-input").focus(),100);
+}
 
 let histPage = 0;
 const HIST_PER_PAGE = 50;
@@ -2795,6 +3145,19 @@ function exportCSV() {
   a.click(); URL.revokeObjectURL(url);
   toast("CSV exportado");
 }
+
+// Ripple effect on primary buttons
+document.addEventListener("click",function(e){
+  const btn=e.target.closest(".bp");
+  if(!btn||btn.disabled)return;
+  const r=document.createElement("span");
+  r.className="btn-ripple-el";
+  const rect=btn.getBoundingClientRect();
+  r.style.left=(e.clientX-rect.left)+"px";
+  r.style.top=(e.clientY-rect.top)+"px";
+  btn.appendChild(r);
+  setTimeout(()=>r.remove(),600);
+});
 
 async function syncSheets() {
   var btn = document.getElementById("btn-sync-sheets");

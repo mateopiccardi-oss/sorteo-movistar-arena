@@ -140,15 +140,37 @@ body::before{
 .a-warn{background:var(--amber-bg);border:1px solid rgba(255,176,32,0.2);color:var(--amber)}
 
 /* Success */
-.success-wrap{text-align:center;padding:8px 0}
+.success-wrap{text-align:center;padding:8px 0;position:relative}
 .success-ic{
-  width:60px;height:60px;border-radius:50%;
-  background:var(--green-bg);border:1px solid rgba(0,240,160,0.25);
+  width:70px;height:70px;border-radius:50%;
+  background:var(--green-bg);border:1px solid rgba(0,240,160,0.3);
   display:flex;align-items:center;justify-content:center;
-  font-size:26px;margin:0 auto 16px;
+  font-size:30px;margin:0 auto 20px;
+  position:relative;
+  box-shadow:0 0 0 0 rgba(0,240,160,0.4);
 }
-.success-title{font-family:var(--fd);font-size:32px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:6px}
+.success-ic::before{
+  content:'';position:absolute;inset:-8px;border-radius:50%;
+  border:1.5px solid rgba(0,240,160,0.2);
+  animation:ringPulse 2s ease-in-out infinite;
+}
+.success-ic::after{
+  content:'';position:absolute;inset:-18px;border-radius:50%;
+  border:1px solid rgba(0,240,160,0.1);
+  animation:ringPulse 2s ease-in-out .4s infinite;
+}
+.success-title{font-family:var(--fd);font-size:36px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:6px;text-shadow:0 0 30px rgba(0,240,160,0.4)}
 .success-msg{font-size:13px;color:var(--gray2);line-height:1.6}
+
+/* Confetti particle */
+.cf{
+  position:fixed;width:7px;border-radius:2px;pointer-events:none;z-index:999;
+  animation:cfFall var(--dur) ease-in var(--delay) both;
+}
+@keyframes cfFall{
+  0%{transform:translateY(-20px) rotate(0deg);opacity:1}
+  100%{transform:translateY(100vh) rotate(var(--rot));opacity:0}
+}
 
 /* Spinner */
 .spinner{
@@ -166,8 +188,10 @@ body::before{
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 12px rgba(0,212,255,0.3))}50%{filter:drop-shadow(0 0 28px rgba(0,212,255,0.65))}}
 @keyframes scaleIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
-@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}80%{transform:scale(0.95)}100%{transform:scale(1);opacity:1}}
+@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.18)}80%{transform:scale(0.93)}100%{transform:scale(1);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:.2}}
+@keyframes successGlow{0%,100%{box-shadow:0 0 0 0 rgba(0,240,160,0)}50%{box-shadow:0 0 0 8px rgba(0,240,160,0.08)}}
 
 .logo img{animation:glowPulse 3s ease-in-out infinite}
 .wrap{animation:fadeIn .4s ease both}
@@ -176,9 +200,9 @@ body::before{
 .btn{transition:all .2s cubic-bezier(.34,1.56,.64,1)}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,0.35)}
 .field input{transition:all .2s ease}
-.success-ic{animation:bounceIn .5s cubic-bezier(.34,1.56,.64,1) both}
-.success-title{animation:fadeUp .4s ease .2s both}
-.success-msg{animation:fadeUp .4s ease .3s both}
+.success-ic{animation:bounceIn .55s cubic-bezier(.34,1.56,.64,1) both,successGlow 2.5s ease 1s infinite}
+.success-title{animation:fadeUp .45s ease .25s both}
+.success-msg{animation:fadeUp .45s ease .35s both}
 .footer{animation:fadeIn .6s ease .4s both;opacity:0;animation-fill-mode:forwards}
 </style>
 </head>
@@ -355,10 +379,30 @@ async function inscribir() {
         `<strong>${res.nombre}</strong>, tu inscripción para <strong>${SHOW_NOMBRE}</strong> fue confirmada.<br><br>Si salís sorteado/a vas a recibir un mail con tu entrada. ¡Buena suerte! 🎉`;
     }
     showStep(3);
+    launchConfetti();
   } catch (e) {
     showErr("err-confirm", "Error de conexión. Intentá de nuevo.");
   } finally {
     setLoading("btn-inscribir", "spin-inscribir", "btn-inscribir-txt", false);
+  }
+}
+
+function launchConfetti() {
+  const colors = ["#00F0A0","#00D4FF","#FFB020","#FF3D5A","#60E8FF","#ffffff"];
+  const count = 60;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "cf";
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const width = 5 + Math.random() * 6;
+    const height = 8 + Math.random() * 10;
+    const dur = 1.8 + Math.random() * 1.4;
+    const delay = Math.random() * 0.8;
+    const rot = (Math.random() > .5 ? "" : "-") + (180 + Math.random() * 360) + "deg";
+    el.style.cssText = `left:${left}%;top:0;width:${width}px;height:${height}px;background:${color};--dur:${dur}s;--delay:${delay}s;--rot:${rot}`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), (dur + delay + 0.2) * 1000);
   }
 }
 

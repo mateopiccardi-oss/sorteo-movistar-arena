@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sorteo BAA</title>
+  <style>
+    body{margin:0;background:#0F1520;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#fff}
+    .box{text-align:center;padding:32px}
+    .logo{font-size:13px;font-weight:700;letter-spacing:3px;color:#00D4FF;text-transform:uppercase;margin-bottom:12px}
+    .msg{font-size:16px;color:rgba(255,255,255,0.6)}
+    .spinner{width:32px;height:32px;border:3px solid rgba(0,212,255,0.2);border-top-color:#00D4FF;border-radius:50%;animation:spin .7s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">Movistar Arena · Sorteo</div>
+    <div class="spinner"></div>
+    <div class="msg">Redirigiendo al formulario…</div>
+  </div>
+  <script>
+    // Get show name from URL path: /s/NOMBRE-SHOW
+    var path = window.location.pathname; // e.g. /s/QLOKURA
+    var parts = path.split('/');
+    var showSlug = parts[parts.length - 1] || '';
+    // Convert slug back to readable: QLOKURA → QLOKURA
+    var showNombre = decodeURIComponent(showSlug).replace(/-/g, ' ').trim();
+
+    if (!showNombre) {
+      document.querySelector('.msg').textContent = 'Link inválido.';
+    } else {
+      // Redirect to formulario with show name
+      var base = 'https://sorteobaa.netlify.app/formulario_inscripcion.html';
+      var params = new URLSearchParams({
+        show: showSlug,
+        nombre: showNombre
+      });
+      window.location.href = base + '?' + params.toString();
+    }
+  </script>
+</body>
+</html>

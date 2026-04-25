@@ -1073,7 +1073,7 @@ let FORM_BASE_URL=localStorage.getItem("form_base_url")||"https://TU-USUARIO.git
 async function api(data){try{const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});return await r.json();}catch(e){return{ok:false,error:e.message};}}
 
 // STATE
-const S={eventos:[],participantes:[],ganadores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
+const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
 let _mailPreviewTimer=null;
 function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{
@@ -1083,6 +1083,7 @@ const save=()=>{
     const toSave={
       eventos:S.eventos,
       ganadores:S.ganadores,
+      colaboradores:S.colaboradores||[],
       sorteo:S.sorteo,
       evActivo:S.evActivo,
       ticketsBase:S.ticketsBase||0,
@@ -1100,6 +1101,7 @@ const load=()=>{
       // Only restore persistent fields - participantes start empty each session
       S.eventos=parsed.eventos||[];
       S.ganadores=parsed.ganadores||[];
+      S.colaboradores=parsed.colaboradores||[];
       S.sorteo=parsed.sorteo||{evId:null,lista:[]};
       S.evActivo=parsed.evActivo||null;
       S.ticketsBase=parsed.ticketsBase||0;
@@ -1320,32 +1322,16 @@ function abrirConfigForm(){
 function copiarLinkForm(id){
   const ev=S.eventos.find(e=>e.id===id);
   if(!ev)return;
-  // Always store the current event before opening modal or generating link
-  window._pendingFormEv=id;
-  if(FORM_BASE_URL.includes("TU-USUARIO")){
-    document.getElementById("gh-url-input").value=FORM_BASE_URL;
-    document.getElementById("modal-gh").classList.add("show");
-    return;
-  }
-  // URL already configured - copy directly
   _generarYCopiarLink(ev);
-  window._pendingFormEv=null;
 }
 function _generarYCopiarLink(ev){
-  // Remove trailing slash from base URL before adding params
-  const base=FORM_BASE_URL.replace(/\/+$/,"");
-  const params=new URLSearchParams({
-    show: ev.id,
-    nombre: ev.show||ev.nombre,
-    fecha: ev.fecha,
-    venue: ev.venue||"Movistar Arena"
-  });
-  const link=base+"?"+params.toString();
-  navigator.clipboard.writeText(link).then(()=>{
-    toast("Link copiado: "+link.slice(0,50)+"…");
+  // Generate short link: sorteobaa.netlify.app/s/NOMBRE-SHOW
+  const showSlug=(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  const shortLink="https://sorteobaa.netlify.app/s/"+showSlug;
+  navigator.clipboard.writeText(shortLink).then(()=>{
+    toast("Link copiado: "+shortLink);
   }).catch(()=>{
-    // fallback: show in prompt
-    prompt("Copiá este link:",link);
+    prompt("Copiá este link:",shortLink);
   });
 }
 function guardarGhUrl(){
@@ -2136,9 +2122,12 @@ async function importarDesdeTracking(silente){
 
       nombres.forEach(function(nombre){
         if(!nombre.trim())return;
-        // Find email from existing data or use placeholder
+        // Match by nombre + same show (evId formats may differ between localStorage and tracking reimport)
         const existingGan=S.ganadores.find(function(g){
-          return g.nombre.toUpperCase()===nombre.toUpperCase()&&g.evId===evId;
+          if(g.nombre.toUpperCase()!==nombre.toUpperCase())return false;
+          if(g.evId===evId)return true;
+          const gEv=S.eventos.find(function(e){return e.id===g.evId;});
+          return gEv&&gEv.show&&gEv.show.toUpperCase()===show.toUpperCase();
         });
         if(!existingGan){
           S.ganadores.push({
@@ -2155,11 +2144,14 @@ async function importarDesdeTracking(silente){
             _historico:true
           });
           totalGan++;
+        } else if(!existingGan._historico){
+          existingGan._historico=true;
         }
       });
     });
 
     if(res.ticketsBase>0)S.ticketsBase=res.ticketsBase;
+    if(res.colaboradores&&res.colaboradores.length)S.colaboradores=res.colaboradores;
     save();
     if(!silente)toast(totalGan+" ganadores importados de "+cols.length+" shows");
     else if(totalGan>0)toast("Sync: "+totalGan+" ganadores cargados");
@@ -2290,7 +2282,10 @@ function animateStat(id,target){
 function renderDash(){
   const totalEv=S.eventos.length;
   const totalPart=S.participantes.length;
-  const totalGan=S.ganadores.length;
+  // Use colaboradores from sheet col A (authoritative) if available, else count from ganadores
+  const totalGan=S.colaboradores&&S.colaboradores.length
+    ?S.colaboradores.reduce((acc,c)=>acc+c.victorias,0)
+    :S.ganadores.length;
   const totalTick=S.ganadores.reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
   const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
   animateStat("ds-ev",totalEv);
@@ -2347,16 +2342,27 @@ function renderHC(q){
   q=q||document.getElementById("search-hc")?.value||"";
   const cv=document.getElementById("chart-hc");
   const el=document.getElementById("dash-hc");
-  if(!S.ganadores.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
-  const map={};
-  S.ganadores.forEach(g=>{
-    const k=g.email.toLowerCase();
-    if(!map[k])map[k]={nombre:g.nombre,email:g.email,wins:[]};
-    map[k].wins.push(g.evNombre);
-  });
-  let lista=Object.values(map).sort((a,b)=>b.wins.length-a.wins.length);
-  if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||p.email.toLowerCase().includes(q.toLowerCase()));
+
+  // Build lista: prefer S.colaboradores (from sheet col A+B, authoritative)
+  // Fall back to counting from S.ganadores if colaboradores not loaded yet
+  let lista=[];
+  if(S.colaboradores&&S.colaboradores.length){
+    lista=S.colaboradores.map(c=>({nombre:c.nombre,wins:c.victorias}));
+  } else {
+    if(!S.ganadores.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
+    const map={};
+    S.ganadores.forEach(g=>{
+      const k=g.nombre.toUpperCase();
+      if(!map[k])map[k]={nombre:g.nombre,wins:0};
+      map[k].wins++;
+    });
+    lista=Object.values(map).sort((a,b)=>b.wins-a.wins);
+  }
+
+  if(!lista.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
+  if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase()));
   if(!lista.length){cv.style.display="none";el.innerHTML='<div style="text-align:center;color:var(--gray3);padding:12px;font-size:12px">Sin resultados</div>';return;}
+
   // Canvas chart
   cv.style.display="block";
   const DPR=window.devicePixelRatio||1;
@@ -2366,9 +2372,9 @@ function renderHC(q){
   cv.width=W*DPR; cv.height=H*DPR;
   cv.style.width=W+"px"; cv.style.height=H+"px";
   const ctx=cv.getContext("2d"); ctx.scale(DPR,DPR);
-  const mx=lista[0].wins.length; const bw=W-PL-PR;
+  const mx=lista[0].wins; const bw=W-PL-PR;
   lista.forEach((p,i)=>{
-    const y=PT+i*(BH+GAP); const w=p.wins.length;
+    const y=PT+i*(BH+GAP); const w=p.wins;
     const c=w>=3?"#FF3D5A":w===2?"#FFB020":"#00F0A0";
     ctx.fillStyle="rgba(255,255,255,0.04)"; rr(ctx,PL,y,bw,BH,3); ctx.fill();
     const gr=ctx.createLinearGradient(PL,0,PL+Math.max(w/mx*bw,4),0);
@@ -2380,14 +2386,11 @@ function renderHC(q){
     ctx.fillText(w+" 🏆",PL+Math.max(w/mx*bw,4)+5,y+BH/2);
   });
   el.innerHTML=lista.map((p,i)=>{
-    const w=p.wins.length; const c=w>=3?"var(--red)":w===2?"var(--amber)":"var(--green)";
-    const evs=p.wins.map(e=>`<span style="font-size:9px;padding:2px 7px;border-radius:3px;background:rgba(0,212,255,0.1);color:var(--ice2);border:1px solid rgba(0,212,255,0.15);margin:1px;display:inline-block">${e}</span>`).join("");
+    const w=p.wins; const c=w>=3?"var(--red)":w===2?"var(--amber)":"var(--green)";
     return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r);border:1px solid ${w>=2?c+'44':'var(--line2)'};background:${w>=2?c+'11':'rgba(255,255,255,0.03)'};margin-bottom:6px;transition:all .15s" onmouseover="this.style.background='${w>=2?c+'1a':'rgba(255,255,255,0.06)'}'" onmouseout="this.style.background='${w>=2?c+'11':'rgba(255,255,255,0.03)'}'">
       <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:${c};width:26px;text-align:center;line-height:1;flex-shrink:0">${i+1}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--white)">${p.nombre}</div>
-        <div style="font-size:10px;color:var(--gray2);margin-top:1px">${p.email}</div>
-        <div style="margin-top:4px">${evs}</div>
       </div>
       <div style="font-family:var(--fd);font-size:32px;font-weight:700;color:${c};line-height:1;flex-shrink:0">${w}</div>
     </div>`;
@@ -2734,7 +2737,150 @@ function confirmarGanadores(){
   save(); toast(lista.length+" ganador(es) confirmados");
   guardarEnSheets(lista,ev).catch(()=>{});
   trackingEnSheets(lista,ev).catch(()=>{});
+  mostrarModalImagenWhatsApp(lista,ev);
   renderStep3();
+}
+
+function mostrarModalImagenWhatsApp(lista,ev){
+  const existing=document.getElementById("modal-wa-img");
+  if(existing)existing.remove();
+
+  const W=1080,H=1080;
+  const cv=document.createElement("canvas");
+  cv.width=W;cv.height=H;
+  const ctx=cv.getContext("2d");
+
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#0F1520");bg.addColorStop(1,"#0A1018");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Top accent bar
+  const bar=ctx.createLinearGradient(0,0,W,0);
+  bar.addColorStop(0,"#00D4FF");bar.addColorStop(1,"#0080FF");
+  ctx.fillStyle=bar;ctx.fillRect(0,0,W,6);
+
+  // Decorative corner circles
+  ctx.beginPath();ctx.arc(0,0,220,0,Math.PI*2);
+  ctx.fillStyle="rgba(0,212,255,0.04)";ctx.fill();
+  ctx.beginPath();ctx.arc(W,H,260,0,Math.PI*2);
+  ctx.fillStyle="rgba(0,128,255,0.04)";ctx.fill();
+
+  // GANADORES header
+  ctx.font="700 72px 'Barlow Condensed',Arial";
+  ctx.fillStyle="#00D4FF";
+  ctx.textAlign="center";
+  ctx.fillText("GANADORES",W/2,130);
+
+  // Divider line
+  const dl=ctx.createLinearGradient(W/2-200,0,W/2+200,0);
+  dl.addColorStop(0,"rgba(0,212,255,0)");dl.addColorStop(0.5,"rgba(0,212,255,0.6)");dl.addColorStop(1,"rgba(0,212,255,0)");
+  ctx.strokeStyle=dl;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(W/2-280,155);ctx.lineTo(W/2+280,155);ctx.stroke();
+
+  // Show name
+  ctx.fillStyle="#FFFFFF";
+  const showName=(ev.show||ev.nombre||"").toUpperCase();
+  const maxFontSize=lista.length>6?54:62;
+  let fontSize=maxFontSize;
+  ctx.font="700 "+fontSize+"px 'Barlow Condensed',Arial";
+  while(ctx.measureText(showName).width>W-120&&fontSize>32){
+    fontSize-=2;ctx.font="700 "+fontSize+"px 'Barlow Condensed',Arial";
+  }
+  ctx.fillText(showName,W/2,230);
+
+  // Date + venue
+  const fmtFecha=d=>{if(!d)return "";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+  const meta=[fmtFecha(ev.fecha),ev.hora,ev.venue||"Movistar Arena"].filter(Boolean).join("  ·  ");
+  ctx.font="400 28px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.45)";
+  ctx.fillText(meta,W/2,278);
+
+  // Winners list
+  const startY=340;
+  const lineH=lista.length>8?74:lista.length>5?82:92;
+  const totalH=lista.length*lineH;
+  const listTop=startY+(H-startY-120-totalH)/2;
+
+  lista.forEach(function(g,i){
+    const y=listTop+i*lineH;
+    const cardX=100,cardW=W-200,cardH=lineH-10;
+
+    // Card background
+    const cardBg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);
+    cardBg.addColorStop(0,"rgba(0,212,255,0.08)");cardBg.addColorStop(1,"rgba(0,128,255,0.04)");
+    ctx.fillStyle=cardBg;
+    roundRect(ctx,cardX,y,cardW,cardH,12);ctx.fill();
+
+    // Card border
+    ctx.strokeStyle="rgba(0,212,255,0.18)";ctx.lineWidth=1;
+    roundRect(ctx,cardX,y,cardW,cardH,12);ctx.stroke();
+
+    // Number badge
+    const badgeR=22;
+    ctx.fillStyle="rgba(0,212,255,0.15)";
+    ctx.beginPath();ctx.arc(cardX+44,y+cardH/2,badgeR,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="rgba(0,212,255,0.4)";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(cardX+44,y+cardH/2,badgeR,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle="#00D4FF";ctx.font="700 24px 'Barlow Condensed',Arial";ctx.textAlign="center";
+    ctx.fillText(i+1,cardX+44,y+cardH/2+8);
+
+    // Name
+    ctx.textAlign="left";
+    const nameSize=lista.length>8?30:34;
+    ctx.font="600 "+nameSize+"px 'Barlow',Arial";ctx.fillStyle="#FFFFFF";
+    ctx.fillText(g.nombre,cardX+84,y+cardH/2+(lista.length>6?6:8));
+  });
+
+  // Footer
+  ctx.textAlign="center";
+  ctx.font="700 26px 'Barlow Condensed',Arial";
+  ctx.fillStyle="rgba(0,212,255,0.5)";
+  ctx.fillText("MOVISTAR ARENA · RECURSOS HUMANOS",W/2,H-40);
+
+  // Bottom bar
+  ctx.fillStyle="rgba(0,212,255,0.15)";ctx.fillRect(0,H-8,W,8);
+
+  // Show modal
+  const modal=document.createElement("div");
+  modal.id="modal-wa-img";
+  modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box";
+  const inner=document.createElement("div");
+  inner.style.cssText="background:#162030;border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:20px;max-width:520px;width:100%;text-align:center";
+  const title=document.createElement("div");
+  title.style.cssText="font-size:14px;font-weight:700;color:#00D4FF;margin-bottom:12px;letter-spacing:1px";
+  title.textContent="IMAGEN PARA WHATSAPP";
+  const preview=document.createElement("img");
+  preview.src=cv.toDataURL("image/png");
+  preview.style.cssText="width:100%;border-radius:8px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08)";
+  const btns=document.createElement("div");
+  btns.style.cssText="display:flex;gap:10px;justify-content:center";
+  const btnDl=document.createElement("button");
+  btnDl.className="btn bp";
+  btnDl.textContent="⬇ Descargar imagen";
+  btnDl.onclick=function(){
+    const a=document.createElement("a");
+    a.href=cv.toDataURL("image/png");
+    const fname=(ev.show||"ganadores").replace(/[^a-zA-Z0-9]/g,"_").toLowerCase();
+    a.download="ganadores_"+fname+".png";
+    a.click();
+  };
+  const btnClose=document.createElement("button");
+  btnClose.className="btn bo";
+  btnClose.textContent="Cerrar";
+  btnClose.onclick=function(){modal.remove();};
+  btns.appendChild(btnDl);btns.appendChild(btnClose);
+  inner.appendChild(title);inner.appendChild(preview);inner.appendChild(btns);
+  modal.appendChild(inner);
+  modal.addEventListener("click",function(e){if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 async function guardarEnSheets(lista,ev){
   await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});

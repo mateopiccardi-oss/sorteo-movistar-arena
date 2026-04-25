@@ -639,8 +639,26 @@ function leerTracking() {
       Logger.log("Error leyendo B123: " + e2.message);
     }
 
-    Logger.log("leerTracking: " + columnas.length + " columnas, ticketsBase: " + ticketsBase);
-    return { ok: true, columnas: columnas, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase };
+    // Read canonical colaboradores list from columns A (names) and B (win count)
+    var colaboradores = [];
+    try {
+      if (lastRow >= 3) {
+        var abData = hoja.getRange(3, 1, lastRow - 2, 2).getValues();
+        for (var r = 0; r < abData.length; r++) {
+          var colNombre = String(abData[r][0] || "").trim();
+          var colVictorias = parseInt(abData[r][1]) || 0;
+          if (colNombre && colVictorias > 0) {
+            colaboradores.push({ nombre: colNombre, victorias: colVictorias });
+          }
+        }
+        colaboradores.sort(function(a, b) { return b.victorias - a.victorias; });
+      }
+    } catch(e3) {
+      Logger.log("Error leyendo cols A-B: " + e3.message);
+    }
+
+    Logger.log("leerTracking: " + columnas.length + " columnas, " + colaboradores.length + " colaboradores con victorias, ticketsBase: " + ticketsBase);
+    return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase };
   } catch(e) {
     Logger.log("Error en leerTracking: " + e.message);
     return { ok: false, error: e.message };

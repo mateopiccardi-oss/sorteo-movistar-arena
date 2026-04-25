@@ -2282,10 +2282,7 @@ function animateStat(id,target){
 function renderDash(){
   const totalEv=S.eventos.length;
   const totalPart=S.participantes.length;
-  // Use colaboradores from sheet col A (authoritative) if available, else count from ganadores
-  const totalGan=S.colaboradores&&S.colaboradores.length
-    ?S.colaboradores.reduce((acc,c)=>acc+c.victorias,0)
-    :S.ganadores.length;
+  const totalGan=S.ganadores.length;
   const totalTick=S.ganadores.reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
   const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
   animateStat("ds-ev",totalEv);

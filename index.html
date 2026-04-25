@@ -2104,15 +2104,19 @@ async function importarDesdeTracking(silente){
       const fecha=col.fecha||"";
       const nombres=col.nombres||[];
 
-      // Find or create evento
-      let ev=S.eventos.find(function(e){return e.show===show||e.nombre===show;});
+      // Find or create evento — match by show AND date so same show on different dates stays separate
+      const parsedFechaCol=parseFecha(fecha);
+      let ev=S.eventos.find(function(e){
+        if(e.show!==show&&e.nombre!==show)return false;
+        if(parsedFechaCol&&e.fecha)return e.fecha===parsedFechaCol;
+        return true; // fallback when date unavailable
+      });
       if(!ev&&show){
         const evId=show+(fecha?"_"+fecha.replace(/\//g,"-"):"");
-        // Only create if not exists
         if(!S.eventos.find(function(e){return e.id===evId;})){
           S.eventos.push({
             id:evId, show:show, nombre:show+(fecha?" - "+fecha:""),
-            fecha:parseFecha(fecha)||"", hora:"", venue:"Movistar Arena, Buenos Aires",
+            fecha:parsedFechaCol||"", hora:"", venue:"Movistar Arena, Buenos Aires",
             cantidad:2, entradasXGan:1, antiRep:true,
             formUrl:"", creadoEn:new Date().toISOString(),
             _fromTracking:true
@@ -2125,14 +2129,14 @@ async function importarDesdeTracking(silente){
 
       nombres.forEach(function(nombre){
         if(!nombre.trim())return;
-        // Match by nombre + same show + same date (evId formats may differ between localStorage and tracking reimport)
-        const parsedFechaCol=parseFecha(fecha);
         const existingGan=S.ganadores.find(function(g){
           if(g.nombre.toUpperCase()!==nombre.toUpperCase())return false;
           if(g.evId===evId)return true;
           const gEv=S.eventos.find(function(e){return e.id===g.evId;});
           if(!gEv||!gEv.show||gEv.show.toUpperCase()!==show.toUpperCase())return false;
-          return parsedFechaCol&&gEv.fecha&&gEv.fecha===parsedFechaCol;
+          // Match date if both available, otherwise show match is enough
+          if(parsedFechaCol&&gEv.fecha)return gEv.fecha===parsedFechaCol;
+          return true;
         });
         if(!existingGan){
           S.ganadores.push({

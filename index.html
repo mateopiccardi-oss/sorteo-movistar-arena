@@ -814,9 +814,12 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <hr>
 
-  <div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--green);margin-bottom:9px;display:flex;align-items:center;gap:7px">
-    <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>
-    Ganadores confirmados
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+    <div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:7px">
+      <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>
+      Ganadores confirmados
+    </div>
+    <button class="btn bo bsm" onclick="generarImagenWADesdeConf()" id="btn-wa-img" style="display:none;font-size:11px">📷 Imagen WhatsApp</button>
   </div>
   <div class="sbox"><input id="gan-search" placeholder="Buscar ganador…" oninput="renderGanConf()"></div>
   <div id="gan-conf-empty" class="empty" style="display:none;border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">★</div><div class="empty-txt">Sin confirmados aún</div></div>
@@ -2122,12 +2125,14 @@ async function importarDesdeTracking(silente){
 
       nombres.forEach(function(nombre){
         if(!nombre.trim())return;
-        // Match by nombre + same show (evId formats may differ between localStorage and tracking reimport)
+        // Match by nombre + same show + same date (evId formats may differ between localStorage and tracking reimport)
+        const parsedFechaCol=parseFecha(fecha);
         const existingGan=S.ganadores.find(function(g){
           if(g.nombre.toUpperCase()!==nombre.toUpperCase())return false;
           if(g.evId===evId)return true;
           const gEv=S.eventos.find(function(e){return e.id===g.evId;});
-          return gEv&&gEv.show&&gEv.show.toUpperCase()===show.toUpperCase();
+          if(!gEv||!gEv.show||gEv.show.toUpperCase()!==show.toUpperCase())return false;
+          return parsedFechaCol&&gEv.fecha&&gEv.fecha===parsedFechaCol;
         });
         if(!existingGan){
           S.ganadores.push({
@@ -2905,6 +2910,8 @@ function renderGanConf(){
   const emEl=document.getElementById("gan-conf-empty");
   const listEl=document.getElementById("gan-conf-list");
   const total=S.ganadores.filter(g=>g.evId===evId).length;
+  const btnWA=document.getElementById("btn-wa-img");
+  if(btnWA)btnWA.style.display=total?"inline-flex":"none";
   if(!total){emEl.style.display="block";listEl.innerHTML="";return;}
   emEl.style.display="none";
   if(!gans.length){listEl.innerHTML='<div style="text-align:center;color:var(--gray3);padding:14px;font-size:12px">Sin resultados</div>';return;}
@@ -2933,6 +2940,13 @@ function renderGanConf(){
   </div>`;
 }
 function toggleGanExp(id){if(_ganExp.has(id))_ganExp.delete(id);else _ganExp.add(id);renderGanConf();}
+function generarImagenWADesdeConf(){
+  const evId=S.evActivo;
+  const ev=S.eventos.find(e=>e.id===evId);
+  const lista=S.ganadores.filter(g=>g.evId===evId);
+  if(!lista.length){toast("Sin ganadores confirmados en este evento","warn");return;}
+  mostrarModalImagenWhatsApp(lista,ev);
+}
 
 // PASO 4: MAILS
 function renderStep4(){

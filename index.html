@@ -2507,7 +2507,9 @@ async function sincronizar(){
   if(!S.evActivo){toast("Sin evento activo","warn");return;}
   const btn=document.getElementById("btn-sync");
   btn.disabled=true; btn.textContent="↻ Sincronizando…";
-  const res=await api({action:"getInscriptos",showId:S.evActivo});
+  const ev=S.eventos.find(e=>e.id===S.evActivo);
+  const showSlug=ev?(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,""):S.evActivo;
+  const res=await api({action:"getInscriptos",showId:showSlug});
   btn.disabled=false; btn.textContent="↻ Sincronizar";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
   let n=0,d=0;

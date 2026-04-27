@@ -66,8 +66,9 @@ function doPost(e) {
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
       case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha));
-      case "leerTracking":      return resp(leerTracking());
-      case "getShows":          return resp(getShows());
+      case "leerTracking":           return resp(leerTracking());
+      case "getUltimasVictorias":    return resp(getUltimasVictorias(body.nombres));
+      case "getShows":               return resp(getShows());
       default:                  return resp({ ok: false, error: "Acción desconocida: " + action });
     }
   } catch (err) {
@@ -661,6 +662,59 @@ function leerTracking() {
     return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase };
   } catch(e) {
     Logger.log("Error en leerTracking: " + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// Devuelve, para cada nombre en la lista, la última fecha en que ganó según el tracking sheet.
+// Los nombres se comparan en UPPERCASE para tolerar diferencias de formato.
+function getUltimasVictorias(nombres) {
+  try {
+    if (!nombres || !nombres.length) return { ok: true, data: [] };
+
+    var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+    var hoja = ss.getSheetByName("Tracking Ganadores");
+    if (!hoja) return { ok: false, error: "No se encontró la pestaña 'Tracking Ganadores'" };
+
+    var lastRow = hoja.getLastRow();
+    var lastCol = hoja.getLastColumn();
+    if (lastCol < 3 || lastRow < 3) return { ok: true, data: nombres.map(function(n){ return {nombre:n, ultimaVictoria:null}; }) };
+
+    // Leer todo: fila 1 = fechas, fila 2 = shows, fila 3+ = ganadores
+    var allData = hoja.getRange(1, 3, lastRow, lastCol - 2).getValues();
+    var numCols = allData[0].length;
+
+    // Mapa: NOMBRE_UPPER -> { nombre original, ultimaVictoria YYYY-MM-DD }
+    var mapa = {};
+    nombres.forEach(function(n) { mapa[n.trim().toUpperCase()] = { nombre: n, ultimaVictoria: null }; });
+
+    for (var c = 0; c < numCols; c++) {
+      var raw = allData[0][c];
+      var fechaISO = "";
+      if (raw instanceof Date) {
+        var dd = String(raw.getDate()).padStart(2,"0");
+        var mm = String(raw.getMonth()+1).padStart(2,"0");
+        fechaISO = raw.getFullYear() + "-" + mm + "-" + dd;
+      } else if (raw) {
+        var parts = String(raw).trim().split("/");
+        if (parts.length === 3) fechaISO = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+      }
+      if (!fechaISO) continue;
+
+      for (var r = 2; r < allData.length; r++) {
+        var cell = String(allData[r][c] || "").trim().toUpperCase();
+        if (!cell) continue;
+        if (mapa[cell] !== undefined) {
+          if (!mapa[cell].ultimaVictoria || fechaISO > mapa[cell].ultimaVictoria) {
+            mapa[cell].ultimaVictoria = fechaISO;
+          }
+        }
+      }
+    }
+
+    return { ok: true, data: Object.values(mapa) };
+  } catch(e) {
+    Logger.log("Error en getUltimasVictorias: " + e.message);
     return { ok: false, error: e.message };
   }
 }

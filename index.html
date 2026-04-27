@@ -68,7 +68,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgb
 /* CARD */
 .card{background:rgba(22,32,48,0.9);border:1px solid rgba(255,255,255,0.09);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
 .card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--ice),transparent 60%);opacity:.2}
-.ct{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ice);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ct{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ice);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .ct::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* STATS */
@@ -76,7 +76,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgb
 @media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){#charts-row{grid-template-columns:1fr!important}}
 .stat{background:rgba(22,32,48,0.9);border:1px solid rgba(255,255,255,0.09);border-radius:var(--r);padding:13px 15px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
-.stat-l{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-bottom:4px}
+.stat-l{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray3);margin-bottom:4px}
 .stat-v{font-family:var(--fd);font-size:34px;font-weight:700;line-height:1;letter-spacing:-1px}
 .stat-sub{font-size:10px;color:var(--gray3);margin-top:5px;line-height:1.3}
 .stat::after{content:"";position:absolute;bottom:0;left:0;width:100%;height:2px}
@@ -561,9 +561,9 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <!-- KPI row -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
-    <div class="stat"><div class="stat-l">Eventos</div><div class="stat-v" style="color:var(--ice2)" id="ds-ev">0</div><div class="stat-sub" id="ds-ev-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--ice),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Inscriptos</div><div class="stat-v" style="color:var(--white)" id="ds-part">0</div><div class="stat-sub" id="ds-part-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.3),transparent)"></div></div>
-    <div class="stat"><div class="stat-l">Ganadores</div><div class="stat-v" style="color:var(--amber)" id="ds-gan">0</div><div class="stat-sub" id="ds-gan-sub"></div><div style="position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div></div>
+    <div class="stat" style="border-left:3px solid var(--ice)"><div class="stat-l">Eventos</div><div class="stat-v" style="color:var(--ice2)" id="ds-ev">0</div><div class="stat-sub" id="ds-ev-sub"></div></div>
+    <div class="stat" style="border-left:3px solid var(--green)"><div class="stat-l">Inscriptos</div><div class="stat-v" style="color:var(--green)" id="ds-part">0</div><div class="stat-sub" id="ds-part-sub"></div></div>
+    <div class="stat" style="border-left:3px solid var(--amber)"><div class="stat-l">Ganadores</div><div class="stat-v" style="color:var(--amber)" id="ds-gan">0</div><div class="stat-sub" id="ds-gan-sub"></div></div>
   </div>
 
   <!-- CHARTS ROW -->
@@ -615,7 +615,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     <div class="card" style="padding:16px;display:flex;flex-direction:column">
       <div class="ct" style="margin-bottom:10px">Show activo</div>
       <div id="active-ev-card" style="flex:1;display:flex;flex-direction:column;justify-content:center">
-        <div class="empty" style="padding:24px 0"><div class="empty-txt">Sin evento activo</div></div>
+        <div class="empty" style="padding:24px 0"><div class="empty-txt">Sin evento activo</div><button class="btn bo bsm" style="margin-top:10px" onclick="document.getElementById('btn-nuevo-ev')?.click()">+ Crear evento</button></div>
       </div>
     </div>
 
@@ -787,7 +787,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-3">
   <div class="ph"><div class="ph-eye">Paso 3</div><div class="ph-t">Ganadores</div><div class="ph-d">Revisá y confirmá antes de enviar</div></div>
 
-  <div id="gan-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">◈</div><div class="empty-txt">Realizá el sorteo primero</div></div>
+  <div id="gan-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">◈</div><div class="empty-txt">Realizá el sorteo primero</div><button class="btn bp bsm" style="margin-top:10px" onclick="goStep(2)">Ir al sorteo →</button></div>
   <div id="gan-panel" style="display:none">
     <!-- Contexto: show + quién recibe el mail -->
     <div id="gan-ctx" style="border:1px solid rgba(255,176,32,0.2);border-radius:var(--r);padding:12px 16px;margin-bottom:10px;background:rgba(255,176,32,0.04)">
@@ -803,6 +803,13 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <div id="gan-list"></div>
     </div>
     <div class="card" id="gan-excl" style="display:none"><div class="ct">Excluidos</div><div id="gan-excl-txt"></div></div>
+    <div class="card" id="gan-recom" style="display:none;margin-bottom:10px">
+      <div class="fb" style="margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--ice2);margin:0">💡 Recomendaciones</div>
+        <div style="font-size:10px;color:var(--gray3)">Inscriptos que hace más tiempo no ganan</div>
+      </div>
+      <div id="gan-recom-list"></div>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid rgba(0,212,255,0.18);border-radius:var(--r);background:rgba(0,212,255,0.04);margin-bottom:12px" id="gan-confirm-banner">
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600;color:var(--white)" id="gan-confirm-txt">Confirmá para guardar en Sheets y actualizar el Tracking</div>
@@ -835,7 +842,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-4">
   <div class="ph"><div class="ph-eye">Paso 4</div><div class="ph-t">Enviar mails</div><div class="ph-d">Personalizá el mail y enviá las entradas</div></div>
 
-  <div id="mail-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">✉</div><div class="empty-txt">Confirmá los ganadores primero</div></div>
+  <div id="mail-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">✉</div><div class="empty-txt">Confirmá los ganadores primero</div><button class="btn bp bsm" style="margin-top:10px" onclick="goStep(3)">Ir a ganadores →</button></div>
   <div id="mail-panel" style="display:none">
 
     <div style="padding:13px 16px;background:rgba(0,212,255,0.06);border:1px solid var(--ice-line);border-radius:var(--r);margin-bottom:10px">
@@ -908,24 +915,48 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <select id="hist-filter-year" onchange="histPage=0;renderHist()" style="background:rgba(255,255,255,0.05);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--white);font-family:var(--fb);font-size:12px;padding:6px 10px;outline:none;flex-shrink:0">
         <option value="">Todos los anios</option>
       </select>
+      <select id="hist-sort" onchange="histPage=0;renderHist()" style="background:rgba(255,255,255,0.05);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--white);font-family:var(--fb);font-size:12px;padding:6px 10px;outline:none;flex-shrink:0">
+        <option value="fecha_desc">Fecha ↓ reciente</option>
+        <option value="fecha_asc">Fecha ↑ antigua</option>
+        <option value="nombre_asc">Nombre A→Z</option>
+        <option value="nombre_desc">Nombre Z→A</option>
+        <option value="victorias_desc">Más victorias</option>
+        <option value="show_asc">Show A→Z</option>
+      </select>
       <button class="btn bo bsm" onclick="exportCSV()" style="flex-shrink:0">CSV</button>
       <button class="btn bg_ bsm" id="btn-sync-sheets" onclick="syncSheets()" style="flex-shrink:0">Sheets</button>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-      <span id="hist-cnt" style="font-size:11px;color:var(--gray3)">0 registros</span>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--line2);background:rgba(255,255,255,0.03)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--ice2)"></div>
+        <span style="font-size:11px;color:var(--gray3)">Total</span>
+        <span style="font-size:12px;font-weight:700;color:var(--white)" id="hist-stat-total">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid rgba(0,240,160,0.2);background:rgba(0,240,160,0.04)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
+        <span style="font-size:11px;color:var(--gray3)">Enviados</span>
+        <span style="font-size:12px;font-weight:700;color:var(--green)" id="hist-stat-env">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,176,32,0.2);background:rgba(255,176,32,0.04)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></div>
+        <span style="font-size:11px;color:var(--gray3)">Pendientes</span>
+        <span style="font-size:12px;font-weight:700;color:var(--amber)" id="hist-stat-pend">0</span>
+      </div>
+      <div style="flex:1"></div>
       <div style="display:flex;gap:6px;align-items:center">
         <button class="btn bo bsm" id="hist-prev" onclick="histPage=Math.max(0,histPage-1);renderHist()" disabled>Ant.</button>
         <span id="hist-page-info" style="font-size:11px;color:var(--gray3);white-space:nowrap">Pag 1</span>
         <button class="btn bo bsm" id="hist-next" onclick="histPage++;renderHist()">Sig.</button>
       </div>
     </div>
+    <span id="hist-cnt" style="display:none">0</span>
     <div id="sync-status" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:var(--rsm)"></div>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden">
     <div class="tw"><table>
-      <thead><tr><th>#</th><th>Nombre</th><th>Email</th><th>Show</th><th>Evento</th><th>Fecha sorteo</th><th>Victorias</th><th>Mail</th></tr></thead>
-      <tbody id="hist-tb"><tr><td colspan="8" style="text-align:center;color:var(--gray3);padding:20px">Sin ganadores</td></tr></tbody>
+      <thead><tr><th>#</th><th>Ganador</th><th>Show</th><th>Fecha</th><th>Victorias</th><th>Estado</th></tr></thead>
+      <tbody id="hist-tb"><tr><td colspan="6" style="text-align:center;color:var(--gray3);padding:20px">Sin ganadores</td></tr></tbody>
     </table></div>
   </div>
 
@@ -2320,7 +2351,7 @@ function renderDash(){
   // Events are rendered by renderMonthTabs()
   const cont=document.getElementById("dash-evs");
   if(!S.eventos.length){
-    cont.innerHTML='<div class="empty"><div class="empty-ic">◈</div><div class="empty-txt">No hay eventos. Creá uno para comenzar.</div></div>';
+    cont.innerHTML='<div class="empty" style="padding:28px 0"><div class="empty-ic">◈</div><div class="empty-txt">No hay eventos todavía</div><button class="btn bp bsm" style="margin-top:12px" onclick="showModalNuevoEv()">+ Crear primer evento</button></div>';
 
   }
 
@@ -2334,11 +2365,59 @@ function renderDash(){
   // Month tabs + events
   renderMonthTabs();
 
-  // Últimos
-  const ult=S.ganadores.slice(-5).reverse();
-  document.getElementById("dash-ult").innerHTML=ult.length
-    ?ult.map(g=>{const ev=S.eventos.find(e=>e.id===g.evId);const show=ev?ev.show:g.evNombre;return`<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r);border:1px solid var(--line2);background:rgba(255,255,255,0.03);margin-bottom:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(0,240,160,0.5)"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--white)">${g.nombre}</div><div style="font-size:10px;color:var(--gray2);margin-top:1px">${g.email}</div><div style="margin-top:3px"><span style="font-size:9px;padding:2px 7px;border-radius:3px;background:rgba(0,212,255,0.1);color:var(--ice2);border:1px solid rgba(0,212,255,0.15)">${show}</span></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:var(--gray2);font-weight:500">${fd(g.fechaGano)}</div><div style="font-size:9px;color:var(--green);margin-top:2px">Ganador</div></div></div>`;}).join("")
-    :'<div class="empty" style="padding:24px 0"><div class="empty-txt">Sin sorteos</div></div>';
+  // Últimos sorteos — agrupados por evento
+  (function(){
+    const el=document.getElementById("dash-ult");
+    if(!S.ganadores.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-txt">Sin sorteos</div></div>';return;}
+
+    // Agrupar por evId
+    const grupos={};
+    S.ganadores.forEach(g=>{
+      if(!grupos[g.evId])grupos[g.evId]={evId:g.evId,ganadores:[]};
+      grupos[g.evId].ganadores.push(g);
+    });
+
+    // Enriquecer con datos del evento y ordenar por fecha desc
+    const lista=Object.values(grupos).map(gr=>{
+      const ev=S.eventos.find(e=>e.id===gr.evId);
+      return{
+        evId:gr.evId,
+        show:ev?.show||ev?.nombre||gr.ganadores[0]?.evNombre||gr.evId,
+        fecha:ev?.fecha||gr.ganadores[0]?.fecha||"",
+        hora:ev?.hora||"",
+        ganadores:gr.ganadores
+      };
+    }).sort((a,b)=>{
+      if(!a.fecha&&!b.fecha)return 0;
+      if(!a.fecha)return 1;
+      if(!b.fecha)return -1;
+      return b.fecha.localeCompare(a.fecha);
+    }).slice(0,5);
+
+    const fmtF=d=>{if(!d)return"";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+
+    el.innerHTML=lista.map((s,idx)=>{
+      const uid="ult-"+idx;
+      const ganStr=s.ganadores.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line2)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <span style="font-size:12px;color:var(--white);font-weight:500">${g.nombre}</span>
+          <span style="font-size:10px;color:var(--gray3);margin-left:6px">${g.email}</span>
+        </div>
+      </div>`).join("");
+      return`<div style="border:1px solid var(--line2);border-radius:var(--r);background:rgba(255,255,255,0.02);margin-bottom:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer" onclick="(function(el){el.style.display=el.style.display==='none'?'block':'none'})(document.getElementById('${uid}'))">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.show}</div>
+            <div style="font-size:10px;color:var(--gray3);margin-top:2px">${fmtF(s.fecha)}${s.hora?" · "+s.hora:""}</div>
+          </div>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,240,160,0.1);color:var(--green);border:1px solid rgba(0,240,160,0.2);flex-shrink:0">${s.ganadores.length} ganador${s.ganadores.length!==1?"es":""}</span>
+          <span style="color:var(--gray3);font-size:10px">▼</span>
+        </div>
+        <div id="${uid}" style="display:none;padding:0 14px 10px">${ganStr}</div>
+      </div>`;
+    }).join("");
+  })();
 
   renderHC();
 }
@@ -2351,9 +2430,10 @@ function renderHC(q){
 
   // Build lista: prefer S.colaboradores (from sheet col A+B, authoritative)
   // Fall back to counting from S.ganadores if colaboradores not loaded yet
+  const _excluir=/^(total|tickets|cuenta\s*tickets?|subtotal|suma)$/i;
   let lista=[];
   if(S.colaboradores&&S.colaboradores.length){
-    lista=S.colaboradores.map(c=>({nombre:c.nombre,wins:c.victorias}));
+    lista=S.colaboradores.filter(c=>!_excluir.test(c.nombre.trim())).map(c=>({nombre:c.nombre,wins:c.victorias}));
   } else {
     if(!S.ganadores.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
     const map={};
@@ -2369,36 +2449,24 @@ function renderHC(q){
   if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase()));
   if(!lista.length){cv.style.display="none";el.innerHTML='<div style="text-align:center;color:var(--gray3);padding:12px;font-size:12px">Sin resultados</div>';return;}
 
-  // Canvas chart
-  cv.style.display="block";
-  const DPR=window.devicePixelRatio||1;
-  const W=cv.parentElement.clientWidth-36;
-  const BH=24,GAP=6,PL=120,PR=46,PT=6,PB=6;
-  const H=PT+lista.length*(BH+GAP)+PB;
-  cv.width=W*DPR; cv.height=H*DPR;
-  cv.style.width=W+"px"; cv.style.height=H+"px";
-  const ctx=cv.getContext("2d"); ctx.scale(DPR,DPR);
-  const mx=lista[0].wins; const bw=W-PL-PR;
-  lista.forEach((p,i)=>{
-    const y=PT+i*(BH+GAP); const w=p.wins;
-    const c=w>=3?"#FF3D5A":w===2?"#FFB020":"#00F0A0";
-    ctx.fillStyle="rgba(255,255,255,0.04)"; rr(ctx,PL,y,bw,BH,3); ctx.fill();
-    const gr=ctx.createLinearGradient(PL,0,PL+Math.max(w/mx*bw,4),0);
-    gr.addColorStop(0,c); gr.addColorStop(1,c+"88");
-    ctx.fillStyle=gr; rr(ctx,PL,y,Math.max(w/mx*bw,4),BH,3); ctx.fill();
-    ctx.fillStyle="rgba(200,212,232,0.8)"; ctx.font="500 11px Barlow,sans-serif"; ctx.textAlign="right"; ctx.textBaseline="middle";
-    ctx.fillText(p.nombre.length>16?p.nombre.slice(0,15)+"…":p.nombre,PL-6,y+BH/2);
-    ctx.fillStyle=c; ctx.font="700 11px 'Barlow Condensed',sans-serif"; ctx.textAlign="left";
-    ctx.fillText(w+" 🏆",PL+Math.max(w/mx*bw,4)+5,y+BH/2);
-  });
+  cv.style.display="none";
+  const maxW=lista[0]?.wins||1;
   el.innerHTML=lista.map((p,i)=>{
-    const w=p.wins; const c=w>=3?"var(--red)":w===2?"var(--amber)":"var(--green)";
-    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r);border:1px solid ${w>=2?c+'44':'var(--line2)'};background:${w>=2?c+'11':'rgba(255,255,255,0.03)'};margin-bottom:6px;transition:all .15s" onmouseover="this.style.background='${w>=2?c+'1a':'rgba(255,255,255,0.06)'}'" onmouseout="this.style.background='${w>=2?c+'11':'rgba(255,255,255,0.03)'}'">
-      <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:${c};width:26px;text-align:center;line-height:1;flex-shrink:0">${i+1}</div>
+    const w=p.wins;
+    const pct=Math.round(w/maxW*100);
+    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);border:1px solid var(--line2);background:rgba(255,255,255,0.025);margin-bottom:5px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.025)'">
+      <div style="font-size:11px;font-weight:600;color:var(--gray3);width:18px;text-align:center;flex-shrink:0">${medal||i+1}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--white)">${p.nombre}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+        <div style="margin-top:5px;height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden">
+          <div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ice2),var(--ice));transition:width .4s"></div>
+        </div>
       </div>
-      <div style="font-family:var(--fd);font-size:32px;font-weight:700;color:${c};line-height:1;flex-shrink:0">${w}</div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <span style="font-size:15px;font-weight:700;color:var(--white)">${w}</span>
+        <span style="font-size:11px;color:var(--gray3)">${w===1?"victoria":"victorias"}</span>
+      </div>
     </div>`;
   }).join("");
 }
@@ -2664,7 +2732,7 @@ function renderStep3(){
       return `<div class="wr${g._ed?" ed":""}">
         <div class="wr-n">${i+1}</div>
         <div class="wr-info">
-          <div class="wr-name">${g.nombre}${g._ed?' <span style="font-size:10px;color:var(--amber)">editado</span>':""}${w>0?' <span style="font-size:9px;color:var(--amber)">🏆'+w+' prev.</span>':""}</div>
+          <div class="wr-name">${g.nombre}${g._ed?' <span style="font-size:10px;color:var(--amber)">editado</span>':""}</div>
           <div class="wr-email" style="color:var(--ice2);font-size:11px">✉ ${g.email}${g.dni?" · <span style='color:var(--gray3)'>DNI "+g.dni+"</span>":""}</div>
         </div>
         <div class="wr-acts">
@@ -2681,6 +2749,7 @@ function renderStep3(){
       ganExcl.style.display="block";
       document.getElementById("gan-excl-txt").innerHTML='<div class="al aw">'+excl.length+' persona(s) excluidas por haber ganado este show anteriormente (regla anti-repetición).</div>';
     } else ganExcl.style.display="none";
+    renderRecomendaciones();
   } else {
     document.getElementById("gan-vacio").style.display="block";
     document.getElementById("gan-panel").style.display="none";
@@ -2688,6 +2757,67 @@ function renderStep3(){
   renderGanConf();
 }
 function quitarGan(i){S.sorteo.lista.splice(i,1);renderStep3();}
+
+async function renderRecomendaciones(){
+  const panel=document.getElementById("gan-recom");
+  const listEl=document.getElementById("gan-recom-list");
+  if(!panel||!listEl)return;
+  const evId=S.evActivo;
+  if(!evId){panel.style.display="none";return;}
+
+  // Participantes del evento actual que no están ya en la lista propuesta
+  const selEmails=new Set(S.sorteo.lista.map(g=>g.email.toLowerCase()));
+  const candidatos=S.participantes.filter(p=>p.evId===evId&&!selEmails.has(p.email.toLowerCase()));
+  if(!candidatos.length){panel.style.display="none";return;}
+
+  panel.style.display="block";
+  listEl.innerHTML='<div style="color:var(--gray3);font-size:11px;padding:6px 0">Consultando Sheets…</div>';
+
+  const nombres=candidatos.map(p=>p.nombre);
+  const res=await api({action:"getUltimasVictorias",nombres});
+  if(!res.ok){
+    listEl.innerHTML=`<div style="font-size:11px;color:var(--red)">Error al consultar Sheets: ${res.error||"sin respuesta"}</div>`;
+    return;
+  }
+
+  // Mapear resultados por nombre (case-insensitive)
+  const mapaVic={};
+  (res.data||[]).forEach(r=>{mapaVic[r.nombre.trim().toUpperCase()]=r.ultimaVictoria||null;});
+
+  // Enriquecer candidatos con su última victoria desde el sheet
+  candidatos.forEach(p=>{p._ultimaVic=mapaVic[p.nombre.trim().toUpperCase()]||null;});
+
+  // Ordenar: nunca ganó primero, luego por última victoria más antigua
+  candidatos.sort((a,b)=>{
+    if(!a._ultimaVic&&!b._ultimaVic)return 0;
+    if(!a._ultimaVic)return -1;
+    if(!b._ultimaVic)return 1;
+    return a._ultimaVic.localeCompare(b._ultimaVic);
+  });
+
+  const top=candidatos.slice(0,5);
+  listEl.innerHTML=top.map(p=>{
+    const label=p._ultimaVic
+      ?`Última victoria: ${p._ultimaVic.split("-").reverse().join("/")}`
+      :`<span style="color:var(--green);font-weight:600">Nunca ganó</span>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid var(--line2);background:rgba(255,255,255,0.03);margin-bottom:5px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--white)">${p.nombre}</div>
+        <div style="font-size:10px;color:var(--gray3);margin-top:1px">${label}</div>
+      </div>
+      <button class="btn bo bsm" onclick="agregarRecomendado('${p.id}')">+ Agregar</button>
+    </div>`;
+  }).join("");
+}
+
+function agregarRecomendado(pid){
+  const p=S.participantes.find(x=>x.id===pid);
+  if(!p)return;
+  if(S.sorteo.lista.find(g=>g.email.toLowerCase()===p.email.toLowerCase())){toast("Ya está en la lista","warn");return;}
+  S.sorteo.lista.push({...p,_ed:true});
+  renderStep3();
+  toast(p.nombre+" agregado");
+}
 let _rIdx=null;
 function abrirRemp(i){
   _rIdx=i;
@@ -2743,110 +2873,67 @@ function confirmarGanadores(){
   save(); toast(lista.length+" ganador(es) confirmados");
   guardarEnSheets(lista,ev).catch(()=>{});
   trackingEnSheets(lista,ev).catch(()=>{});
-  mostrarModalImagenWhatsApp(lista,ev);
+  mostrarPantallaGanadores(lista,ev);
   renderStep3();
+}
+
+function mostrarPantallaGanadores(lista,ev){
+  const existing=document.getElementById('reveal-ganadores');
+  if(existing)existing.remove();
+  const fmtF=d=>{if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}};
+  const showName=(ev.show||ev.nombre||'').toUpperCase();
+  const evNombre=(ev.nombre||'').toUpperCase();
+  const meta=[fmtF(ev.fecha),ev.hora,ev.venue||'Movistar Arena'].filter(Boolean).join(' · ');
+  const nSize=lista.length>10?18:lista.length>6?22:26;
+
+  const overlay=document.createElement('div');
+  overlay.id='reveal-ganadores';
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.09) 0%,transparent 55%),#090E1A;overflow-y:auto';
+
+  const inner=document.createElement('div');
+  inner.style.cssText='width:100%;max-width:600px;margin:auto;text-align:center;padding:8px 0 16px';
+
+  inner.innerHTML=`
+    <div style="font-size:9px;font-weight:700;letter-spacing:4px;color:rgba(0,212,255,0.5);text-transform:uppercase;margin-bottom:16px;font-family:var(--fb)">MOVISTAR ARENA · RECURSOS HUMANOS</div>
+    <div style="font-family:var(--fd);font-size:58px;font-weight:700;letter-spacing:3px;color:#00D4FF;text-transform:uppercase;line-height:1;text-shadow:0 0 40px rgba(0,212,255,0.35)">GANADORES</div>
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.45),transparent);max-width:440px;margin:14px auto 18px"></div>
+    <div style="font-family:var(--fd);font-size:${lista.length>6?26:30}px;font-weight:700;color:#F4F7FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:${showName!==evNombre?3:6}px">${showName}</div>
+    ${showName!==evNombre?`<div style="font-family:var(--fd);font-size:15px;font-weight:600;color:rgba(0,212,255,0.55);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${evNombre}</div>`:''}
+    <div style="font-size:11px;color:rgba(255,255,255,0.28);letter-spacing:.5px;margin-bottom:26px;font-family:var(--fb)">${meta}</div>
+    <div id="reveal-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:26px;text-align:left"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn bo" style="font-size:12px" onclick="(function(){var o=document.getElementById('reveal-ganadores');if(o)o.remove();mostrarModalImagenWhatsApp(window._rvL,window._rvE);})()">📷 Guardar imagen</button>
+      <button class="btn bp" style="font-size:12px;min-width:120px" onclick="var o=document.getElementById('reveal-ganadores');if(o)o.remove()">Continuar →</button>
+    </div>
+  `;
+  window._rvL=lista; window._rvE=ev;
+  overlay.appendChild(inner);
+  document.body.appendChild(overlay);
+
+  // Cerrar con Escape o click fuera
+  function onKey(e){if(e.key==='Escape'){overlay.remove();document.removeEventListener('keydown',onKey);}}
+  document.addEventListener('keydown',onKey);
+  overlay.addEventListener('click',function(e){if(e.target===overlay){overlay.remove();document.removeEventListener('keydown',onKey);}});
+
+  const listEl=document.getElementById('reveal-list');
+  lista.forEach(function(g,i){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:14px;padding:11px 18px;border-radius:10px;border:1px solid rgba(0,212,255,0.13);background:rgba(0,212,255,0.04);opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease';
+    row.innerHTML='<div style="font-family:var(--fd);font-size:17px;font-weight:700;color:rgba(0,212,255,0.38);width:22px;text-align:center;flex-shrink:0;line-height:1">'+(i+1)+'</div><div style="font-family:var(--fd);font-size:'+nSize+'px;font-weight:600;color:#F4F7FF;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nombre+'</div>';
+    listEl.appendChild(row);
+    setTimeout(function(){row.style.opacity='1';row.style.transform='translateY(0)';},80+i*55);
+  });
 }
 
 function mostrarModalImagenWhatsApp(lista,ev){
   const existing=document.getElementById("modal-wa-img");
   if(existing)existing.remove();
 
-  const W=1080,H=1080;
+  const W=1080,H=1350;
   const cv=document.createElement("canvas");
   cv.width=W;cv.height=H;
-  const ctx=cv.getContext("2d");
 
-  // Background gradient
-  const bg=ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,"#0F1520");bg.addColorStop(1,"#0A1018");
-  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-
-  // Top accent bar
-  const bar=ctx.createLinearGradient(0,0,W,0);
-  bar.addColorStop(0,"#00D4FF");bar.addColorStop(1,"#0080FF");
-  ctx.fillStyle=bar;ctx.fillRect(0,0,W,6);
-
-  // Decorative corner circles
-  ctx.beginPath();ctx.arc(0,0,220,0,Math.PI*2);
-  ctx.fillStyle="rgba(0,212,255,0.04)";ctx.fill();
-  ctx.beginPath();ctx.arc(W,H,260,0,Math.PI*2);
-  ctx.fillStyle="rgba(0,128,255,0.04)";ctx.fill();
-
-  // GANADORES header
-  ctx.font="700 72px 'Barlow Condensed',Arial";
-  ctx.fillStyle="#00D4FF";
-  ctx.textAlign="center";
-  ctx.fillText("GANADORES",W/2,130);
-
-  // Divider line
-  const dl=ctx.createLinearGradient(W/2-200,0,W/2+200,0);
-  dl.addColorStop(0,"rgba(0,212,255,0)");dl.addColorStop(0.5,"rgba(0,212,255,0.6)");dl.addColorStop(1,"rgba(0,212,255,0)");
-  ctx.strokeStyle=dl;ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.moveTo(W/2-280,155);ctx.lineTo(W/2+280,155);ctx.stroke();
-
-  // Show name
-  ctx.fillStyle="#FFFFFF";
-  const showName=(ev.show||ev.nombre||"").toUpperCase();
-  const maxFontSize=lista.length>6?54:62;
-  let fontSize=maxFontSize;
-  ctx.font="700 "+fontSize+"px 'Barlow Condensed',Arial";
-  while(ctx.measureText(showName).width>W-120&&fontSize>32){
-    fontSize-=2;ctx.font="700 "+fontSize+"px 'Barlow Condensed',Arial";
-  }
-  ctx.fillText(showName,W/2,230);
-
-  // Date + venue
-  const fmtFecha=d=>{if(!d)return "";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
-  const meta=[fmtFecha(ev.fecha),ev.hora,ev.venue||"Movistar Arena"].filter(Boolean).join("  ·  ");
-  ctx.font="400 28px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.45)";
-  ctx.fillText(meta,W/2,278);
-
-  // Winners list
-  const startY=340;
-  const lineH=lista.length>8?74:lista.length>5?82:92;
-  const totalH=lista.length*lineH;
-  const listTop=startY+(H-startY-120-totalH)/2;
-
-  lista.forEach(function(g,i){
-    const y=listTop+i*lineH;
-    const cardX=100,cardW=W-200,cardH=lineH-10;
-
-    // Card background
-    const cardBg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);
-    cardBg.addColorStop(0,"rgba(0,212,255,0.08)");cardBg.addColorStop(1,"rgba(0,128,255,0.04)");
-    ctx.fillStyle=cardBg;
-    roundRect(ctx,cardX,y,cardW,cardH,12);ctx.fill();
-
-    // Card border
-    ctx.strokeStyle="rgba(0,212,255,0.18)";ctx.lineWidth=1;
-    roundRect(ctx,cardX,y,cardW,cardH,12);ctx.stroke();
-
-    // Number badge
-    const badgeR=22;
-    ctx.fillStyle="rgba(0,212,255,0.15)";
-    ctx.beginPath();ctx.arc(cardX+44,y+cardH/2,badgeR,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle="rgba(0,212,255,0.4)";ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(cardX+44,y+cardH/2,badgeR,0,Math.PI*2);ctx.stroke();
-    ctx.fillStyle="#00D4FF";ctx.font="700 24px 'Barlow Condensed',Arial";ctx.textAlign="center";
-    ctx.fillText(i+1,cardX+44,y+cardH/2+8);
-
-    // Name
-    ctx.textAlign="left";
-    const nameSize=lista.length>8?30:34;
-    ctx.font="600 "+nameSize+"px 'Barlow',Arial";ctx.fillStyle="#FFFFFF";
-    ctx.fillText(g.nombre,cardX+84,y+cardH/2+(lista.length>6?6:8));
-  });
-
-  // Footer
-  ctx.textAlign="center";
-  ctx.font="700 26px 'Barlow Condensed',Arial";
-  ctx.fillStyle="rgba(0,212,255,0.5)";
-  ctx.fillText("MOVISTAR ARENA · RECURSOS HUMANOS",W/2,H-40);
-
-  // Bottom bar
-  ctx.fillStyle="rgba(0,212,255,0.15)";ctx.fillRect(0,H-8,W,8);
-
-  // Show modal
+  // Build modal with loading state first
   const modal=document.createElement("div");
   modal.id="modal-wa-img";
   modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box";
@@ -2855,30 +2942,179 @@ function mostrarModalImagenWhatsApp(lista,ev){
   const title=document.createElement("div");
   title.style.cssText="font-size:14px;font-weight:700;color:#00D4FF;margin-bottom:12px;letter-spacing:1px";
   title.textContent="IMAGEN PARA WHATSAPP";
+  const loadingEl=document.createElement("div");
+  loadingEl.style.cssText="color:rgba(0,212,255,0.5);font-size:12px;padding:32px 0;margin-bottom:14px";
+  loadingEl.textContent="Generando imagen…";
   const preview=document.createElement("img");
-  preview.src=cv.toDataURL("image/png");
-  preview.style.cssText="width:100%;border-radius:8px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08)";
+  preview.style.cssText="width:100%;border-radius:8px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08);display:none";
   const btns=document.createElement("div");
   btns.style.cssText="display:flex;gap:10px;justify-content:center";
   const btnDl=document.createElement("button");
-  btnDl.className="btn bp";
-  btnDl.textContent="⬇ Descargar imagen";
+  btnDl.className="btn bp";btnDl.textContent="⬇ Descargar imagen";
   btnDl.onclick=function(){
     const a=document.createElement("a");
     a.href=cv.toDataURL("image/png");
     const fname=(ev.show||"ganadores").replace(/[^a-zA-Z0-9]/g,"_").toLowerCase();
-    a.download="ganadores_"+fname+".png";
-    a.click();
+    a.download="ganadores_"+fname+".png";a.click();
   };
   const btnClose=document.createElement("button");
-  btnClose.className="btn bo";
-  btnClose.textContent="Cerrar";
+  btnClose.className="btn bo";btnClose.textContent="Cerrar";
   btnClose.onclick=function(){modal.remove();};
   btns.appendChild(btnDl);btns.appendChild(btnClose);
-  inner.appendChild(title);inner.appendChild(preview);inner.appendChild(btns);
+  inner.appendChild(title);inner.appendChild(loadingEl);inner.appendChild(preview);inner.appendChild(btns);
   modal.appendChild(inner);
   modal.addEventListener("click",function(e){if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
+
+  // Wait for fonts to load before drawing (avoids Arial fallback)
+  Promise.all([
+    document.fonts.load('700 72px "Barlow Condensed"'),
+    document.fonts.load('600 34px "Barlow"')
+  ]).then(function(){
+    const ctx=cv.getContext("2d");
+
+    // ── Fondo ──────────────────────────────────────────────
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,"#0B1622");bg.addColorStop(0.5,"#0D1A2B");bg.addColorStop(1,"#070E18");
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // Glows decorativos
+    const gl1=ctx.createRadialGradient(W*0.15,H*0.15,0,W*0.15,H*0.15,W*0.55);
+    gl1.addColorStop(0,"rgba(0,180,255,0.09)");gl1.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=gl1;ctx.fillRect(0,0,W,H);
+    const gl2=ctx.createRadialGradient(W*0.85,H*0.8,0,W*0.85,H*0.8,W*0.5);
+    gl2.addColorStop(0,"rgba(0,80,220,0.08)");gl2.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=gl2;ctx.fillRect(0,0,W,H);
+
+    // Borde superior degradado
+    const topBar=ctx.createLinearGradient(0,0,W,0);
+    topBar.addColorStop(0,"rgba(0,212,255,0)");topBar.addColorStop(0.3,"#00D4FF");
+    topBar.addColorStop(0.7,"#0066FF");topBar.addColorStop(1,"rgba(0,102,255,0)");
+    ctx.fillStyle=topBar;ctx.fillRect(0,0,W,5);
+
+    // ── Calcular layout dinámico ────────────────────────────
+    const fmtFecha=d=>{if(!d)return"";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+    const showName=(ev.show||ev.nombre||"").toUpperCase();
+    const meta=[fmtFecha(ev.fecha),ev.hora,ev.venue||"Movistar Arena"].filter(Boolean).join("   ·   ");
+
+    const FOOTER_H=70;
+    const LABEL_H=30;
+    const TITLE_H=62;  // "GANADORES" más chico
+    const DECO_H=22;
+    let fontSize=lista.length>6?72:84;  // show name más grande
+    ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";
+    while(ctx.measureText(showName).width>W-80&&fontSize>36){fontSize-=2;ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";}
+    const SHOW_H=fontSize+20;
+    const META_H=30;
+    const HEADER_H=LABEL_H+TITLE_H+DECO_H+SHOW_H+META_H;
+
+    const GAP=28;
+    const CARD_GAP=10;
+    const maxLineH=lista.length>12?80:lista.length>8?92:lista.length>5?108:124;
+    const lineH=Math.min(maxLineH,Math.floor((H-HEADER_H-FOOTER_H-GAP-40)/lista.length));
+    const listH=lista.length*lineH;
+
+    const totalContent=HEADER_H+GAP+listH;
+    const topOffset=Math.max(36,Math.round((H-FOOTER_H-totalContent)/2));
+
+    // ── Header compacto ─────────────────────────────────────
+    let cy=topOffset;
+    ctx.textAlign="center";
+
+    ctx.font="500 19px 'Barlow',Arial";
+    ctx.fillStyle="rgba(0,212,255,0.4)";
+    cy+=LABEL_H;
+    ctx.fillText("MOVISTAR ARENA  ·  RECURSOS HUMANOS",W/2,cy);
+
+    cy+=TITLE_H;
+    ctx.font="600 48px 'Barlow Condensed',Arial";
+    ctx.fillStyle="rgba(255,255,255,0.55)";
+    ctx.fillText("GANADORES",W/2,cy);
+
+    cy+=DECO_H;
+    const dl=ctx.createLinearGradient(W/2-320,0,W/2+320,0);
+    dl.addColorStop(0,"rgba(0,212,255,0)");dl.addColorStop(0.35,"#00D4FF");
+    dl.addColorStop(0.65,"#0066FF");dl.addColorStop(1,"rgba(0,102,255,0)");
+    ctx.strokeStyle=dl;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(W/2-320,cy);ctx.lineTo(W/2+320,cy);ctx.stroke();
+
+    cy+=SHOW_H;
+    ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";
+    ctx.fillStyle="#FFFFFF";
+    ctx.shadowColor="rgba(0,212,255,0.5)";ctx.shadowBlur=20;
+    ctx.fillText(showName,W/2,cy);
+    ctx.shadowColor="transparent";ctx.shadowBlur=0;
+
+    cy+=META_H;
+    ctx.font="400 22px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.35)";
+    ctx.fillText(meta,W/2,cy);
+
+    // ── Lista de ganadores ──────────────────────────────────
+    const listTop=cy+GAP;
+    const cardX=50,cardW=W-100;
+    const cr=8; // esquinas casi rectas
+
+    lista.forEach(function(g,i){
+      const y=listTop+i*lineH;
+      const ch=lineH-CARD_GAP;
+      const cx=cardX,cw=cardW,mid=y+ch/2;
+
+      // Sombra
+      ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=16;ctx.shadowOffsetY=4;
+
+      // Fondo
+      const cardBg=ctx.createLinearGradient(cx,y,cx+cw,y);
+      cardBg.addColorStop(0,"rgba(0,170,255,0.14)");
+      cardBg.addColorStop(1,"rgba(0,50,160,0.05)");
+      ctx.fillStyle=cardBg;roundRect(ctx,cx,y,cw,ch,cr);ctx.fill();
+      ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+
+      // Borde
+      ctx.strokeStyle="rgba(0,212,255,0.28)";ctx.lineWidth=1.2;
+      roundRect(ctx,cx,y,cw,ch,cr);ctx.stroke();
+
+      // Línea de acento izquierda (3px sólida)
+      ctx.fillStyle="#00D4FF";
+      roundRect(ctx,cx,y,3,ch,2);ctx.fill();
+
+      // Shimmer
+      const shine=ctx.createLinearGradient(cx,y,cx,y+ch*0.5);
+      shine.addColorStop(0,"rgba(255,255,255,0.06)");shine.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=shine;roundRect(ctx,cx,y,cw,ch*0.5,cr);ctx.fill();
+
+      // Nombre centrado
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      const nameSize=Math.min(
+        lista.length>10?38:lista.length>6?46:lista.length>3?54:62,
+        Math.floor(ch*0.58)
+      );
+      ctx.font="700 "+nameSize+"px 'Barlow Condensed',Arial";
+      const maxNameW=cw-60;
+      let nombre=g.nombre.toUpperCase();
+      while(ctx.measureText(nombre).width>maxNameW&&nombre.length>4)nombre=nombre.slice(0,-1);
+      if(nombre!==g.nombre.toUpperCase())nombre=nombre.trimEnd()+"…";
+      ctx.shadowColor="rgba(0,212,255,0.35)";ctx.shadowBlur=12;
+      ctx.fillStyle="#FFFFFF";
+      ctx.fillText(nombre,cx+cw/2,mid);
+      ctx.shadowColor="transparent";ctx.shadowBlur=0;
+    });
+
+    // ── Footer (siempre al fondo) ───────────────────────────
+    ctx.textBaseline="alphabetic";
+    const fline=ctx.createLinearGradient(0,0,W,0);
+    fline.addColorStop(0,"rgba(0,212,255,0)");fline.addColorStop(0.5,"rgba(0,212,255,0.25)");fline.addColorStop(1,"rgba(0,212,255,0)");
+    ctx.strokeStyle=fline;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(80,H-56);ctx.lineTo(W-80,H-56);ctx.stroke();
+    ctx.font="500 20px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.2)";
+    ctx.textAlign="center";
+    ctx.fillText("SORTEO INTERNO  ·  "+new Date().getFullYear(),W/2,H-28);
+
+    // Borde inferior
+    ctx.fillStyle=topBar;ctx.fillRect(0,H-4,W,4);
+    preview.src=cv.toDataURL("image/png");
+    loadingEl.style.display="none";
+    preview.style.display="block";
+  });
 }
 
 function roundRect(ctx,x,y,w,h,r){
@@ -2914,30 +3150,35 @@ function renderGanConf(){
   const emEl=document.getElementById("gan-conf-empty");
   const listEl=document.getElementById("gan-conf-list");
   const total=S.ganadores.filter(g=>g.evId===evId).length;
+  const totalSent=S.ganadores.filter(g=>g.evId===evId&&g.estado==="enviado").length;
   const btnWA=document.getElementById("btn-wa-img");
   if(btnWA)btnWA.style.display=total?"inline-flex":"none";
   if(!total){emEl.style.display="block";listEl.innerHTML="";return;}
   emEl.style.display="none";
   if(!gans.length){listEl.innerHTML='<div style="text-align:center;color:var(--gray3);padding:14px;font-size:12px">Sin resultados</div>';return;}
-  const env=gans.filter(g=>g.estado==="enviado").length;
   const isExp=_ganExp.has(evId)||!!q;
   const ev=S.eventos.find(e=>e.id===evId);
+  // Preview of winner names for collapsed header
+  const allGans=S.ganadores.filter(g=>g.evId===evId);
+  const preview=allGans.slice(0,3).map(g=>g.nombre.split(' ')[0]).join(', ')+(allGans.length>3?' y '+(allGans.length-3)+' más':'');
   const rows=gans.map((g,i)=>{
-    const w=S.ganadores.filter(x=>x.email.toLowerCase()===g.email.toLowerCase()).length;
     return `<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--line)">
       <div style="font-family:var(--fd);font-size:16px;color:var(--ice);opacity:.35;width:22px;text-align:center;line-height:1">${i+1}</div>
-      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${g.nombre}${w>1?" <span style='font-size:9px;color:var(--amber)'>🏆×"+w+"</span>":""}</div><div style="font-size:10px;color:var(--gray3)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${g.nombre}</div><div style="font-size:10px;color:var(--gray3)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
       <span class="bic ${g.estado==="enviado"?"bgi":"bai"}">${g.estado==="enviado"?"✓ Enviado":"Pendiente"}</span>
     </div>`;
   }).join("");
   listEl.innerHTML=`<div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--bg2)">
     <div data-ev="${evId}" onclick="toggleGanExp(this.dataset.ev)" style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:${isExp?"rgba(0,212,255,0.05)":"var(--bg2)"};border-bottom:${isExp?"1px solid var(--line)":"none"}">
       <div style="width:24px;height:24px;border-radius:4px;background:${isExp?"var(--ice-bg)":"rgba(255,255,255,0.05)"};border:1px solid ${isExp?"var(--ice-line)":"var(--line)"};display:flex;align-items:center;justify-content:center;font-size:9px;color:${isExp?"var(--ice2)":"var(--gray3)"};font-weight:700">${isExp?"▲":"▼"}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:${isExp?"var(--ice2)":"var(--white)"}">${ev?ev.nombre:"Show"}</div></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:${isExp?"var(--ice2)":"var(--white)"}">${ev?ev.nombre:"Show"}</div>
+        ${!isExp?`<div style="font-size:10px;color:var(--gray3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</div>`:''}
+      </div>
       <div style="display:flex;gap:9px;flex-shrink:0">
-        <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--ice2)">${gans.length}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">gan.</div></div>
+        <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--ice2)">${total}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">gan.</div></div>
         <div style="width:1px;height:18px;background:var(--line);align-self:center"></div>
-        <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--green)">${env}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">env.</div></div>
+        <div style="text-align:center"><div style="font-family:var(--fd);font-size:18px;color:var(--green)">${totalSent}</div><div style="font-size:7px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px">env.</div></div>
       </div>
     </div>
     ${isExp?"<div>"+rows+"</div>":""}
@@ -3077,28 +3318,6 @@ function copiar(bid,btn){
 }
 
 // HISTORIAL
-function renderHist(q){
-  q=q||document.getElementById("search-hist")?.value||"";
-  let lista=q?S.ganadores.filter(g=>g.nombre.toLowerCase().includes(q.toLowerCase())||g.email.toLowerCase().includes(q.toLowerCase())||g.evNombre?.toLowerCase().includes(q.toLowerCase())):[...S.ganadores];
-  lista.sort((a,b)=>new Date(b.fechaGano)-new Date(a.fechaGano));
-  document.getElementById("hist-cnt").textContent=lista.length+" registros";
-  const tb=document.getElementById("hist-tb");
-  if(!lista.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--gray3);padding:20px">Sin ganadores</td></tr>';return;}
-  tb.innerHTML=lista.map((g,i)=>{
-    const w=S.ganadores.filter(x=>x.email.toLowerCase()===g.email.toLowerCase()).length;
-    return `<tr>
-      <td style="color:var(--gray3)">${i+1}</td>
-      <td style="font-weight:500">${g.nombre}</td>
-      <td style="color:var(--gray2)">${g.email}</td>
-      <td>${g.dni||"—"}</td>
-      <td>${g.evNombre}</td>
-      <td style="color:var(--gray3);font-size:11px">${fd(g.fechaGano)}</td>
-      <td style="text-align:center"><span class="bic ${w>1?"bai":"bi"}">${w} 🏆</span></td>
-      <td><span class="bic ${g.estado==="enviado"?"bgi":"bai"}">${g.estado==="enviado"?"✓ Enviado":"Pendiente"}</span></td>
-    </tr>`;
-  }).join("");
-}
-
 // UTILS
 const v=id=>document.getElementById(id)?.value||"";
 const fd=iso=>{try{return new Date(iso).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})}catch(e){return iso||"—"}};
@@ -3108,10 +3327,12 @@ function toast(msg,type="ok"){const el=document.getElementById("toast");el.class
 function closeModal(id){document.getElementById(id).classList.remove("show");}
 
 // ── AUTH ──────────────────────────────────────────────────
-const PIN="1234";
-function checkPin(){
+const _PH="03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+async function _h(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}
+async function checkPin(){
   const inp=document.getElementById("pin-input");
-  if(inp.value===PIN){
+  const h=await _h(inp.value);
+  if(h===_PH){
     sessionStorage.setItem("ma_auth","1");
     const gate=document.getElementById("pin-gate");
     gate.classList.add("out");
@@ -3249,7 +3470,25 @@ function renderHist() {
   });
   if (filterEstado) lista = lista.filter(function(g) { return g.estado === filterEstado; });
   if (filterYear) lista = lista.filter(function(g) { return g.fechaGano && g.fechaGano.startsWith(filterYear); });
-  lista.sort(function(a, b) { return new Date(b.fechaGano) - new Date(a.fechaGano); });
+  var sortVal = (document.getElementById("hist-sort")||{}).value || "fecha_desc";
+  lista.sort(function(a, b) {
+    switch(sortVal) {
+      case "fecha_asc":  return new Date(a.fechaGano) - new Date(b.fechaGano);
+      case "nombre_asc": return (a.nombre||"").localeCompare(b.nombre||"");
+      case "nombre_desc":return (b.nombre||"").localeCompare(a.nombre||"");
+      case "victorias_desc": {
+        var wa=S.ganadores.filter(function(x){return x.email&&x.email.toLowerCase()===(a.email||"").toLowerCase();}).length;
+        var wb=S.ganadores.filter(function(x){return x.email&&x.email.toLowerCase()===(b.email||"").toLowerCase();}).length;
+        return wb-wa;
+      }
+      case "show_asc": {
+        var ea=S.eventos.find(function(e){return e.id===a.evId;});
+        var eb=S.eventos.find(function(e){return e.id===b.evId;});
+        return ((ea?ea.show:"")||"").localeCompare((eb?eb.show:"")||"");
+      }
+      default: return new Date(b.fechaGano) - new Date(a.fechaGano);
+    }
+  });
   var total = lista.length;
   var totalPages = Math.max(1, Math.ceil(total / HIST_PER_PAGE));
   if (histPage >= totalPages) histPage = totalPages - 1;
@@ -3258,31 +3497,47 @@ function renderHist() {
   var pageEl = document.getElementById("hist-page-info");
   var prevBtn = document.getElementById("hist-prev");
   var nextBtn = document.getElementById("hist-next");
-  if (cntEl) cntEl.textContent = total + " registro" + (total !== 1 ? "s" : "");
+  if (cntEl) cntEl.textContent = total;
+  var totalEnv = lista.filter(function(g){return g.estado==="enviado";}).length;
+  var totalPend = lista.filter(function(g){return g.estado!=="enviado";}).length;
+  var stTotal = document.getElementById("hist-stat-total");
+  var stEnv = document.getElementById("hist-stat-env");
+  var stPend = document.getElementById("hist-stat-pend");
+  if(stTotal) stTotal.textContent = total;
+  if(stEnv)   stEnv.textContent   = totalEnv;
+  if(stPend)  stPend.textContent  = totalPend;
   if (pageEl) pageEl.textContent = "Pag " + (histPage + 1) + " / " + totalPages;
   if (prevBtn) prevBtn.disabled = histPage === 0;
   if (nextBtn) nextBtn.disabled = histPage >= totalPages - 1;
   var tb = document.getElementById("hist-tb");
   if (!tb) return;
   if (!paginated.length) {
-    tb.innerHTML = "<tr><td colspan='8' style='text-align:center;color:var(--gray3);padding:24px'>Sin resultados</td></tr>";
+    tb.innerHTML = "<tr><td colspan='6' style='text-align:center;color:var(--gray3);padding:24px'>Sin resultados</td></tr>";
     return;
   }
   tb.innerHTML = paginated.map(function(g, i) {
     var idx = histPage * HIST_PER_PAGE + i + 1;
     var w = S.ganadores.filter(function(x) { return x.email && x.email.toLowerCase() === (g.email || "").toLowerCase(); }).length;
     var ev = S.eventos.find(function(e) { return e.id === g.evId; });
-    var show = ev ? (ev.show || "") : "";
-    var badge = g.estado === "enviado" ? "<span class='bic bgi'>Enviado</span>" : "<span class='bic bai'>Pendiente</span>";
-    var wbadge = "<span class='bic " + (w > 1 ? "bai" : "bi") + "'>" + w + " wins</span>";
-    return "<tr><td style='color:var(--gray3);font-size:11px'>" + idx + "</td>" +
-      "<td style='font-weight:500'>" + (g.nombre || "") + "</td>" +
-      "<td style='color:var(--gray2);font-size:11px'>" + (g.email || "") + "</td>" +
-      "<td style='font-size:11px;color:var(--ice2)'>" + show + "</td>" +
-      "<td style='font-size:11px'>" + (g.evNombre || "") + "</td>" +
-      "<td style='color:var(--gray3);font-size:11px'>" + fd(g.fechaGano) + "</td>" +
-      "<td style='text-align:center'>" + wbadge + "</td>" +
-      "<td>" + badge + "</td></tr>";
+    var show = ev ? (ev.show || ev.nombre || "") : (g.evNombre || "");
+    var fecha = ev ? (ev.fecha || "") : "";
+    var fmtF = function(d){if(!d)return"";try{var p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+
+    var estadoBadge = g.estado === "enviado"
+      ? "<span style='display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--green);padding:3px 8px;border-radius:20px;border:1px solid rgba(0,240,160,0.25);background:rgba(0,240,160,0.07)'><span style='width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block'></span>Enviado</span>"
+      : "<span style='display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--amber);padding:3px 8px;border-radius:20px;border:1px solid rgba(255,176,32,0.25);background:rgba(255,176,32,0.07)'><span style='width:5px;height:5px;border-radius:50%;background:var(--amber);display:inline-block'></span>Pendiente</span>";
+
+    var wbadge = w > 1
+      ? "<span style='font-size:11px;font-weight:700;color:var(--amber)'>"+w+" 🏆</span>"
+      : "<span style='font-size:11px;color:var(--gray3)'>"+w+"</span>";
+
+    return "<tr>" +
+      "<td style='color:var(--gray3);font-size:11px;width:32px'>"+idx+"</td>" +
+      "<td><div style='font-size:13px;font-weight:600;color:var(--white);line-height:1.2'>"+(g.nombre||"")+"</div><div style='font-size:10px;color:var(--gray3);margin-top:2px'>"+(g.email||"")+"</div></td>" +
+      "<td><div style='font-size:12px;color:var(--ice2);font-weight:500'>"+show+"</div><div style='font-size:10px;color:var(--gray3);margin-top:1px'>"+fmtF(fecha)+"</div></td>" +
+      "<td style='font-size:11px;color:var(--gray3);white-space:nowrap'>"+fd(g.fechaGano)+"</td>" +
+      "<td style='text-align:center'>"+wbadge+"</td>" +
+      "<td>"+estadoBadge+"</td></tr>";
   }).join("");
 }
 

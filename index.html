@@ -2509,8 +2509,6 @@ async function sincronizar(){
   btn.disabled=true; btn.textContent="↻ Sincronizando…";
   const ev=S.eventos.find(e=>e.id===S.evActivo);
   const showSlug=ev?(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,""):S.evActivo;
-  console.log("[DEBUG sincronizar] evActivo=",S.evActivo,"| ev=",ev,"| showSlug=",showSlug);
-  alert("DEBUG SYNC\nevActivo: "+S.evActivo+"\nev.show: "+(ev?ev.show:"null")+"\nev.nombre: "+(ev?ev.nombre:"null")+"\nshowSlug enviado: "+showSlug);
   toast("🔍 Buscando con ID: "+showSlug);
   const res=await api({action:"getInscriptos",showId:showSlug});
   btn.disabled=false; btn.textContent="↻ Sincronizar";

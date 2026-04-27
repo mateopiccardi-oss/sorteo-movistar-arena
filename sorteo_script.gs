@@ -185,7 +185,7 @@ function getInscriptos(showId) {
   const inscriptos = [];
 
   for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][1]).trim() === String(showId).trim()) {
+    if (String(datos[i][1]).trim().toLowerCase() === String(showId).trim().toLowerCase()) {
       inscriptos.push({
         mail: String(datos[i][4]).trim(),
         nombre: String(datos[i][5]).trim(),

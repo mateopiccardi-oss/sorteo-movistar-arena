@@ -2922,7 +2922,7 @@ function mostrarPantallaGanadores(lista,ev){
   overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.09) 0%,transparent 55%),#090E1A;overflow-y:auto';
 
   const inner=document.createElement('div');
-  inner.style.cssText='width:100%;max-width:600px;margin:auto;text-align:center;padding:8px 0 16px';
+  inner.style.cssText='width:100%;max-width:600px;margin:auto;text-align:center;padding:8px 0 32px';
 
   inner.innerHTML=`
     <div style="font-size:9px;font-weight:700;letter-spacing:4px;color:rgba(0,212,255,0.5);text-transform:uppercase;margin-bottom:16px;font-family:var(--fb)">MOVISTAR ARENA · RECURSOS HUMANOS</div>
@@ -2932,16 +2932,21 @@ function mostrarPantallaGanadores(lista,ev){
     ${showName!==evNombre?`<div style="font-family:var(--fd);font-size:15px;font-weight:600;color:rgba(0,212,255,0.55);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${evNombre}</div>`:''}
     <div style="font-size:11px;color:rgba(255,255,255,0.28);letter-spacing:.5px;margin-bottom:26px;font-family:var(--fb)">${meta}</div>
     <div id="reveal-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:26px;text-align:left"></div>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <button class="btn bo" style="font-size:12px" onclick="(function(){var o=document.getElementById('reveal-ganadores');if(o)o.remove();mostrarModalImagenWhatsApp(window._rvL,window._rvE);})()">📷 Guardar imagen</button>
-      <button class="btn bp" style="font-size:12px;min-width:120px" onclick="var o=document.getElementById('reveal-ganadores');if(o)o.remove()">Continuar →</button>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+      <button class="btn bp" style="font-size:12px;min-width:140px" onclick="var o=document.getElementById('reveal-ganadores');if(o)o.remove()">Continuar →</button>
+    </div>
+    <div id="reveal-wa" style="opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease">
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);margin-bottom:22px"></div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:16px;font-family:var(--fb)">Imagen para WhatsApp corpo</div>
+      <div id="reveal-wa-loading" style="color:rgba(255,255,255,0.25);font-size:12px;padding:24px 0;font-family:var(--fb)">Generando imagen…</div>
+      <img id="reveal-wa-preview" style="width:100%;max-width:340px;border-radius:12px;border:1px solid rgba(0,212,255,0.18);display:none;margin:0 auto 16px;box-shadow:0 12px 40px rgba(0,0,0,0.6)">
+      <div id="reveal-wa-btns" style="display:none;gap:8px;justify-content:center;flex-wrap:wrap"></div>
     </div>
   `;
   window._rvL=lista; window._rvE=ev;
   overlay.appendChild(inner);
   document.body.appendChild(overlay);
 
-  // Cerrar con Escape o click fuera
   function onKey(e){if(e.key==='Escape'){overlay.remove();document.removeEventListener('keydown',onKey);}}
   document.addEventListener('keydown',onKey);
   overlay.addEventListener('click',function(e){if(e.target===overlay){overlay.remove();document.removeEventListener('keydown',onKey);}});
@@ -2953,6 +2958,132 @@ function mostrarPantallaGanadores(lista,ev){
     row.innerHTML='<div style="font-family:var(--fd);font-size:17px;font-weight:700;color:rgba(0,212,255,0.38);width:22px;text-align:center;flex-shrink:0;line-height:1">'+(i+1)+'</div><div style="font-family:var(--fd);font-size:'+nSize+'px;font-weight:600;color:#F4F7FF;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nombre+'</div>';
     listEl.appendChild(row);
     setTimeout(function(){row.style.opacity='1';row.style.transform='translateY(0)';},80+i*55);
+  });
+
+  // Auto-generar imagen WA una vez que terminan las animaciones
+  var waDelay=Math.max(1400, 80+lista.length*55+500);
+  setTimeout(function(){
+    var waSection=document.getElementById('reveal-wa');
+    if(!waSection)return;
+    waSection.style.opacity='1';waSection.style.transform='translateY(0)';
+    _generarCanvasWA(lista,ev).then(function(cv){
+      var loading=document.getElementById('reveal-wa-loading');
+      var preview=document.getElementById('reveal-wa-preview');
+      var btnsEl=document.getElementById('reveal-wa-btns');
+      if(!preview)return;
+      if(loading)loading.style.display='none';
+      preview.src=cv.toDataURL('image/png');preview.style.display='block';
+      if(btnsEl){
+        var btnDl=document.createElement('button');
+        btnDl.className='btn bp';btnDl.textContent='⬇ Descargar imagen';btnDl.style.fontSize='12px';
+        btnDl.onclick=function(){
+          var a=document.createElement('a');
+          a.href=cv.toDataURL('image/png');
+          a.download='ganadores_'+((ev.show||'').replace(/[^a-zA-Z0-9]/g,'_').toLowerCase())+'.png';
+          a.click();
+        };
+        btnsEl.appendChild(btnDl);
+        btnsEl.style.display='flex';
+      }
+    });
+  },waDelay);
+}
+
+function _generarCanvasWA(lista,ev){
+  return Promise.all([
+    document.fonts.load('700 72px "Barlow Condensed"'),
+    document.fonts.load('600 34px "Barlow"')
+  ]).then(function(){
+    const W=1080,H=1350;
+    const cv=document.createElement('canvas');
+    cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');
+
+    // ── Fondo ──────────────────────────────────────────────
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,"#0B1622");bg.addColorStop(0.5,"#0D1A2B");bg.addColorStop(1,"#070E18");
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    const gl1=ctx.createRadialGradient(W*0.15,H*0.15,0,W*0.15,H*0.15,W*0.55);
+    gl1.addColorStop(0,"rgba(0,180,255,0.09)");gl1.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=gl1;ctx.fillRect(0,0,W,H);
+    const gl2=ctx.createRadialGradient(W*0.85,H*0.8,0,W*0.85,H*0.8,W*0.5);
+    gl2.addColorStop(0,"rgba(0,80,220,0.08)");gl2.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=gl2;ctx.fillRect(0,0,W,H);
+
+    const topBar=ctx.createLinearGradient(0,0,W,0);
+    topBar.addColorStop(0,"rgba(0,212,255,0)");topBar.addColorStop(0.3,"#00D4FF");
+    topBar.addColorStop(0.7,"#0066FF");topBar.addColorStop(1,"rgba(0,102,255,0)");
+    ctx.fillStyle=topBar;ctx.fillRect(0,0,W,5);
+
+    // ── Layout dinámico ────────────────────────────────────
+    const fmtFecha=d=>{if(!d)return"";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+    const showName=(ev.show||ev.nombre||"").toUpperCase();
+    const meta=[fmtFecha(ev.fecha),ev.hora,ev.venue||"Movistar Arena"].filter(Boolean).join("   ·   ");
+
+    const FOOTER_H=70,LABEL_H=30,TITLE_H=62,DECO_H=22;
+    let fontSize=lista.length>6?72:84;
+    ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";
+    while(ctx.measureText(showName).width>W-80&&fontSize>36){fontSize-=2;ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";}
+    const SHOW_H=fontSize+20,META_H=30;
+    const HEADER_H=LABEL_H+TITLE_H+DECO_H+SHOW_H+META_H;
+    const GAP=28,CARD_GAP=10;
+    const maxLineH=lista.length>12?80:lista.length>8?92:lista.length>5?108:124;
+    const lineH=Math.min(maxLineH,Math.floor((H-HEADER_H-FOOTER_H-GAP-40)/lista.length));
+    const totalContent=HEADER_H+GAP+lista.length*lineH;
+    const topOffset=Math.max(36,Math.round((H-FOOTER_H-totalContent)/2));
+
+    // ── Header ─────────────────────────────────────────────
+    let cy=topOffset;
+    ctx.textAlign="center";
+    ctx.font="500 19px 'Barlow',Arial";ctx.fillStyle="rgba(0,212,255,0.4)";
+    cy+=LABEL_H;ctx.fillText("MOVISTAR ARENA  ·  RECURSOS HUMANOS",W/2,cy);
+    cy+=TITLE_H;ctx.font="600 48px 'Barlow Condensed',Arial";ctx.fillStyle="rgba(255,255,255,0.55)";
+    ctx.fillText("GANADORES",W/2,cy);
+    cy+=DECO_H;
+    const dl=ctx.createLinearGradient(W/2-320,0,W/2+320,0);
+    dl.addColorStop(0,"rgba(0,212,255,0)");dl.addColorStop(0.35,"#00D4FF");
+    dl.addColorStop(0.65,"#0066FF");dl.addColorStop(1,"rgba(0,102,255,0)");
+    ctx.strokeStyle=dl;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2-320,cy);ctx.lineTo(W/2+320,cy);ctx.stroke();
+    cy+=SHOW_H;ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";ctx.fillStyle="#FFFFFF";
+    ctx.shadowColor="rgba(0,212,255,0.5)";ctx.shadowBlur=20;ctx.fillText(showName,W/2,cy);
+    ctx.shadowColor="transparent";ctx.shadowBlur=0;
+    cy+=META_H;ctx.font="400 22px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.35)";
+    ctx.fillText(meta,W/2,cy);
+
+    // ── Ganadores ──────────────────────────────────────────
+    const listTop=cy+GAP,cardX=50,cardW=W-100,cr=8;
+    lista.forEach(function(g,i){
+      const y=listTop+i*lineH,ch=lineH-CARD_GAP,cx=cardX,cw=cardW,mid=y+ch/2;
+      ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=16;ctx.shadowOffsetY=4;
+      const cardBg=ctx.createLinearGradient(cx,y,cx+cw,y);
+      cardBg.addColorStop(0,"rgba(0,170,255,0.14)");cardBg.addColorStop(1,"rgba(0,50,160,0.05)");
+      ctx.fillStyle=cardBg;roundRect(ctx,cx,y,cw,ch,cr);ctx.fill();
+      ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+      ctx.strokeStyle="rgba(0,212,255,0.28)";ctx.lineWidth=1.2;roundRect(ctx,cx,y,cw,ch,cr);ctx.stroke();
+      ctx.fillStyle="#00D4FF";roundRect(ctx,cx,y,3,ch,2);ctx.fill();
+      const shine=ctx.createLinearGradient(cx,y,cx,y+ch*0.5);
+      shine.addColorStop(0,"rgba(255,255,255,0.06)");shine.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=shine;roundRect(ctx,cx,y,cw,ch*0.5,cr);ctx.fill();
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      const nameSize=Math.min(lista.length>10?38:lista.length>6?46:lista.length>3?54:62,Math.floor(ch*0.58));
+      ctx.font="700 "+nameSize+"px 'Barlow Condensed',Arial";
+      const maxNameW=cw-60;let nombre=g.nombre.toUpperCase();
+      while(ctx.measureText(nombre).width>maxNameW&&nombre.length>4)nombre=nombre.slice(0,-1);
+      if(nombre!==g.nombre.toUpperCase())nombre=nombre.trimEnd()+"…";
+      ctx.shadowColor="rgba(0,212,255,0.35)";ctx.shadowBlur=12;ctx.fillStyle="#FFFFFF";
+      ctx.fillText(nombre,cx+cw/2,mid);ctx.shadowColor="transparent";ctx.shadowBlur=0;
+    });
+
+    // ── Footer ─────────────────────────────────────────────
+    ctx.textBaseline="alphabetic";
+    const fline=ctx.createLinearGradient(0,0,W,0);
+    fline.addColorStop(0,"rgba(0,212,255,0)");fline.addColorStop(0.5,"rgba(0,212,255,0.25)");fline.addColorStop(1,"rgba(0,212,255,0)");
+    ctx.strokeStyle=fline;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(80,H-56);ctx.lineTo(W-80,H-56);ctx.stroke();
+    ctx.font="500 20px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.2)";ctx.textAlign="center";
+    ctx.fillText("SORTEO INTERNO  ·  "+new Date().getFullYear(),W/2,H-28);
+    ctx.fillStyle=topBar;ctx.fillRect(0,H-4,W,4);
+    return cv;
   });
 }
 
@@ -2997,151 +3128,7 @@ function mostrarModalImagenWhatsApp(lista,ev){
   modal.addEventListener("click",function(e){if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
 
-  // Wait for fonts to load before drawing (avoids Arial fallback)
-  Promise.all([
-    document.fonts.load('700 72px "Barlow Condensed"'),
-    document.fonts.load('600 34px "Barlow"')
-  ]).then(function(){
-    const ctx=cv.getContext("2d");
-
-    // ── Fondo ──────────────────────────────────────────────
-    const bg=ctx.createLinearGradient(0,0,0,H);
-    bg.addColorStop(0,"#0B1622");bg.addColorStop(0.5,"#0D1A2B");bg.addColorStop(1,"#070E18");
-    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-
-    // Glows decorativos
-    const gl1=ctx.createRadialGradient(W*0.15,H*0.15,0,W*0.15,H*0.15,W*0.55);
-    gl1.addColorStop(0,"rgba(0,180,255,0.09)");gl1.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=gl1;ctx.fillRect(0,0,W,H);
-    const gl2=ctx.createRadialGradient(W*0.85,H*0.8,0,W*0.85,H*0.8,W*0.5);
-    gl2.addColorStop(0,"rgba(0,80,220,0.08)");gl2.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=gl2;ctx.fillRect(0,0,W,H);
-
-    // Borde superior degradado
-    const topBar=ctx.createLinearGradient(0,0,W,0);
-    topBar.addColorStop(0,"rgba(0,212,255,0)");topBar.addColorStop(0.3,"#00D4FF");
-    topBar.addColorStop(0.7,"#0066FF");topBar.addColorStop(1,"rgba(0,102,255,0)");
-    ctx.fillStyle=topBar;ctx.fillRect(0,0,W,5);
-
-    // ── Calcular layout dinámico ────────────────────────────
-    const fmtFecha=d=>{if(!d)return"";try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
-    const showName=(ev.show||ev.nombre||"").toUpperCase();
-    const meta=[fmtFecha(ev.fecha),ev.hora,ev.venue||"Movistar Arena"].filter(Boolean).join("   ·   ");
-
-    const FOOTER_H=70;
-    const LABEL_H=30;
-    const TITLE_H=62;  // "GANADORES" más chico
-    const DECO_H=22;
-    let fontSize=lista.length>6?72:84;  // show name más grande
-    ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";
-    while(ctx.measureText(showName).width>W-80&&fontSize>36){fontSize-=2;ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";}
-    const SHOW_H=fontSize+20;
-    const META_H=30;
-    const HEADER_H=LABEL_H+TITLE_H+DECO_H+SHOW_H+META_H;
-
-    const GAP=28;
-    const CARD_GAP=10;
-    const maxLineH=lista.length>12?80:lista.length>8?92:lista.length>5?108:124;
-    const lineH=Math.min(maxLineH,Math.floor((H-HEADER_H-FOOTER_H-GAP-40)/lista.length));
-    const listH=lista.length*lineH;
-
-    const totalContent=HEADER_H+GAP+listH;
-    const topOffset=Math.max(36,Math.round((H-FOOTER_H-totalContent)/2));
-
-    // ── Header compacto ─────────────────────────────────────
-    let cy=topOffset;
-    ctx.textAlign="center";
-
-    ctx.font="500 19px 'Barlow',Arial";
-    ctx.fillStyle="rgba(0,212,255,0.4)";
-    cy+=LABEL_H;
-    ctx.fillText("MOVISTAR ARENA  ·  RECURSOS HUMANOS",W/2,cy);
-
-    cy+=TITLE_H;
-    ctx.font="600 48px 'Barlow Condensed',Arial";
-    ctx.fillStyle="rgba(255,255,255,0.55)";
-    ctx.fillText("GANADORES",W/2,cy);
-
-    cy+=DECO_H;
-    const dl=ctx.createLinearGradient(W/2-320,0,W/2+320,0);
-    dl.addColorStop(0,"rgba(0,212,255,0)");dl.addColorStop(0.35,"#00D4FF");
-    dl.addColorStop(0.65,"#0066FF");dl.addColorStop(1,"rgba(0,102,255,0)");
-    ctx.strokeStyle=dl;ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(W/2-320,cy);ctx.lineTo(W/2+320,cy);ctx.stroke();
-
-    cy+=SHOW_H;
-    ctx.font="800 "+fontSize+"px 'Barlow Condensed',Arial";
-    ctx.fillStyle="#FFFFFF";
-    ctx.shadowColor="rgba(0,212,255,0.5)";ctx.shadowBlur=20;
-    ctx.fillText(showName,W/2,cy);
-    ctx.shadowColor="transparent";ctx.shadowBlur=0;
-
-    cy+=META_H;
-    ctx.font="400 22px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.35)";
-    ctx.fillText(meta,W/2,cy);
-
-    // ── Lista de ganadores ──────────────────────────────────
-    const listTop=cy+GAP;
-    const cardX=50,cardW=W-100;
-    const cr=8; // esquinas casi rectas
-
-    lista.forEach(function(g,i){
-      const y=listTop+i*lineH;
-      const ch=lineH-CARD_GAP;
-      const cx=cardX,cw=cardW,mid=y+ch/2;
-
-      // Sombra
-      ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=16;ctx.shadowOffsetY=4;
-
-      // Fondo
-      const cardBg=ctx.createLinearGradient(cx,y,cx+cw,y);
-      cardBg.addColorStop(0,"rgba(0,170,255,0.14)");
-      cardBg.addColorStop(1,"rgba(0,50,160,0.05)");
-      ctx.fillStyle=cardBg;roundRect(ctx,cx,y,cw,ch,cr);ctx.fill();
-      ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-
-      // Borde
-      ctx.strokeStyle="rgba(0,212,255,0.28)";ctx.lineWidth=1.2;
-      roundRect(ctx,cx,y,cw,ch,cr);ctx.stroke();
-
-      // Línea de acento izquierda (3px sólida)
-      ctx.fillStyle="#00D4FF";
-      roundRect(ctx,cx,y,3,ch,2);ctx.fill();
-
-      // Shimmer
-      const shine=ctx.createLinearGradient(cx,y,cx,y+ch*0.5);
-      shine.addColorStop(0,"rgba(255,255,255,0.06)");shine.addColorStop(1,"rgba(255,255,255,0)");
-      ctx.fillStyle=shine;roundRect(ctx,cx,y,cw,ch*0.5,cr);ctx.fill();
-
-      // Nombre centrado
-      ctx.textAlign="center";ctx.textBaseline="middle";
-      const nameSize=Math.min(
-        lista.length>10?38:lista.length>6?46:lista.length>3?54:62,
-        Math.floor(ch*0.58)
-      );
-      ctx.font="700 "+nameSize+"px 'Barlow Condensed',Arial";
-      const maxNameW=cw-60;
-      let nombre=g.nombre.toUpperCase();
-      while(ctx.measureText(nombre).width>maxNameW&&nombre.length>4)nombre=nombre.slice(0,-1);
-      if(nombre!==g.nombre.toUpperCase())nombre=nombre.trimEnd()+"…";
-      ctx.shadowColor="rgba(0,212,255,0.35)";ctx.shadowBlur=12;
-      ctx.fillStyle="#FFFFFF";
-      ctx.fillText(nombre,cx+cw/2,mid);
-      ctx.shadowColor="transparent";ctx.shadowBlur=0;
-    });
-
-    // ── Footer (siempre al fondo) ───────────────────────────
-    ctx.textBaseline="alphabetic";
-    const fline=ctx.createLinearGradient(0,0,W,0);
-    fline.addColorStop(0,"rgba(0,212,255,0)");fline.addColorStop(0.5,"rgba(0,212,255,0.25)");fline.addColorStop(1,"rgba(0,212,255,0)");
-    ctx.strokeStyle=fline;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(80,H-56);ctx.lineTo(W-80,H-56);ctx.stroke();
-    ctx.font="500 20px 'Barlow',Arial";ctx.fillStyle="rgba(255,255,255,0.2)";
-    ctx.textAlign="center";
-    ctx.fillText("SORTEO INTERNO  ·  "+new Date().getFullYear(),W/2,H-28);
-
-    // Borde inferior
-    ctx.fillStyle=topBar;ctx.fillRect(0,H-4,W,4);
+  _generarCanvasWA(lista,ev).then(function(cv){
     preview.src=cv.toDataURL("image/png");
     loadingEl.style.display="none";
     preview.style.display="block";

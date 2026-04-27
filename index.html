@@ -1104,7 +1104,19 @@ const SCRIPT_URL="https://script.google.com/a/macros/movistararena.com.ar/s/AKfy
 // URL base del formulario en GitHub Pages — cambiá esto con tu URL real
 let FORM_BASE_URL=localStorage.getItem("form_base_url")||"https://TU-USUARIO.github.io/sorteo-movistar-arena/";
 
-async function api(data){try{const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});return await r.json();}catch(e){return{ok:false,error:e.message};}}
+async function api(data){
+  try{
+    const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});
+    const text=await r.text();
+    try{return JSON.parse(text);}
+    catch(e){
+      // Google devolvió HTML (probablemente login redirect por autenticación)
+      if(text.includes("<html")||text.includes("<!DOCTYPE"))
+        return{ok:false,error:"Sin acceso al script — abrí la app desde el navegador con tu cuenta @movistararena.com.ar"};
+      return{ok:false,error:"Respuesta inválida del servidor"};
+    }
+  }catch(e){return{ok:false,error:e.message};}
+}
 
 // STATE
 const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
@@ -2860,21 +2872,37 @@ function agregarGan(pid){
   const p=S.participantes.find(x=>String(x.id)===String(pid));
   if(p){S.sorteo.lista.push({...p,_ed:true});closeModal("modal-agr");renderStep3();toast("Agregado");}
 }
-function confirmarGanadores(){
+async function confirmarGanadores(){
   const{evId,lista}=S.sorteo;
   if(!lista.length){toast("Sin ganadores","warn");return;}
   const ev=S.eventos.find(e=>e.id===evId);
+  if(!ev){toast("Evento no encontrado","warn");return;}
+
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
     estado:"pendiente", fechaGano:new Date().toISOString()
   }));
   S.sorteo={evId:null,lista:[]};
-  save(); toast(lista.length+" ganador(es) confirmados");
-  guardarEnSheets(lista,ev).catch(()=>{});
-  trackingEnSheets(lista,ev).catch(()=>{});
+  save();
+  toast(lista.length+" ganador(es) confirmados — sincronizando Sheets…");
   mostrarPantallaGanadores(lista,ev);
   renderStep3();
+
+  // Sincronizar con Sheets en paralelo y mostrar resultado
+  const resultados=await Promise.allSettled([
+    guardarEnSheets(lista,ev),
+    trackingEnSheets(lista,ev)
+  ]);
+  const errores=resultados
+    .filter(r=>r.status==="rejected")
+    .map(r=>r.reason?.message||"Error desconocido");
+  if(errores.length){
+    toast("⚠ Error al sincronizar Sheets: "+errores[0],"warn");
+    console.error("Sheets sync errors:",errores);
+  } else {
+    toast("✓ Sheets sincronizado correctamente");
+  }
 }
 
 function mostrarPantallaGanadores(lista,ev){
@@ -3125,21 +3153,20 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 async function guardarEnSheets(lista,ev){
-  await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
+  const res=await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
+  if(!res.ok)throw new Error(res.error||"Error en guardarGanadores");
+  return res;
 }
 async function trackingEnSheets(lista,ev){
-  try{
-    // Format date as DD/MM/YYYY
-    const fmtCorta=d=>{try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
-    const res=await api({
-      action:"trackingGanadores",
-      ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email})),
-      showNombre:ev.show||ev.nombre,
-      fecha:fmtCorta(ev.fecha)
-    });
-    if(res.ok)toast("Tracking actualizado: "+res.mensaje);
-    else console.warn("Tracking error:",res.error);
-  }catch(e){console.warn("trackingEnSheets error:",e);}
+  const fmtCorta=d=>{try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
+  const res=await api({
+    action:"trackingGanadores",
+    ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email})),
+    showNombre:ev.show||ev.nombre,
+    fecha:fmtCorta(ev.fecha)
+  });
+  if(!res.ok)throw new Error(res.error||"Error en trackingGanadores");
+  return res;
 }
 const _ganExp=new Set();
 function renderGanConf(){

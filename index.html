@@ -2509,6 +2509,7 @@ async function sincronizar(){
   btn.disabled=true; btn.textContent="↻ Sincronizando…";
   const ev=S.eventos.find(e=>e.id===S.evActivo);
   const showSlug=ev?(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,""):S.evActivo;
+  toast("🔍 Buscando con ID: "+showSlug);
   const res=await api({action:"getInscriptos",showId:showSlug});
   btn.disabled=false; btn.textContent="↻ Sincronizar";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}

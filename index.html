@@ -2150,7 +2150,7 @@ async function importarDesdeTracking(silente){
       // Find or create evento — match by show AND date so same show on different dates stays separate
       const parsedFechaCol=parseFecha(fecha);
       let ev=S.eventos.find(function(e){
-        if(e.show!==show&&e.nombre!==show)return false;
+        if(e.show.toUpperCase()!==show.toUpperCase()&&(e.nombre||"").toUpperCase()!==show.toUpperCase())return false;
         if(parsedFechaCol&&e.fecha)return e.fecha===parsedFechaCol;
         return true; // fallback when date unavailable
       });

@@ -172,6 +172,13 @@ function inscribir(mail, showId, showNombre, fecha) {
 }
 
 // ============================================================
+//  HELPERS
+// ============================================================
+function normalizarShowId(s) {
+  return String(s).trim().toUpperCase().replace(/[^A-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
+// ============================================================
 //  GET INSCRIPTOS — devuelve todos los inscriptos de un show
 // ============================================================
 function getInscriptos(showId) {
@@ -185,7 +192,7 @@ function getInscriptos(showId) {
   const inscriptos = [];
 
   for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][1]).trim().toLowerCase() === String(showId).trim().toLowerCase()) {
+    if (normalizarShowId(datos[i][1]) === normalizarShowId(showId)) {
       inscriptos.push({
         mail: String(datos[i][4]).trim(),
         nombre: String(datos[i][5]).trim(),
@@ -446,7 +453,7 @@ function syncGanadores(ganadores) {
     if (!ganadores || !ganadores.length) return { ok: true, mensaje: "Sin datos para sincronizar" };
 
     var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
-    var hoja = ss.getSheetByName("Ganadores") || ss.insertSheet("Ganadores");
+    var hoja = ss.getSheetByName("Backup Ganadores") || ss.insertSheet("Backup Ganadores");
 
     // Clear and rewrite headers + data
     hoja.clearContents();

@@ -1371,9 +1371,9 @@ function copiarLinkForm(id){
   _generarYCopiarLink(ev);
 }
 function _generarYCopiarLink(ev){
-  // Generate short link: sorteobaa.netlify.app/s/NOMBRE-SHOW
-  const showSlug=(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
-  const shortLink="https://sorteobaa.netlify.app/s/"+showSlug;
+  const idSlug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  const nombre=encodeURIComponent(ev.show||ev.nombre);
+  const shortLink="https://sorteobaa.netlify.app/s/"+idSlug+"?n="+nombre;
   navigator.clipboard.writeText(shortLink).then(()=>{
     toast("Link copiado: "+shortLink);
   }).catch(()=>{
@@ -2508,7 +2508,7 @@ async function sincronizar(){
   const btn=document.getElementById("btn-sync");
   btn.disabled=true; btn.textContent="↻ Sincronizando…";
   const ev=S.eventos.find(e=>e.id===S.evActivo);
-  const showSlug=ev?(ev.show||ev.nombre).toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,""):S.evActivo;
+  const showSlug=ev?ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,""):S.evActivo;
   toast("🔍 Buscando con ID: "+showSlug);
   const res=await api({action:"getInscriptos",showId:showSlug});
   btn.disabled=false; btn.textContent="↻ Sincronizar";

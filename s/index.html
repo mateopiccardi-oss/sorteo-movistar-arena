@@ -24,8 +24,8 @@
     var path = window.location.pathname; // e.g. /s/QLOKURA
     var parts = path.split('/');
     var showSlug = parts[parts.length - 1] || '';
-    // Convert slug back to readable: QLOKURA → QLOKURA
-    var showNombre = decodeURIComponent(showSlug).replace(/-/g, ' ').trim();
+    var qParams = new URLSearchParams(window.location.search);
+    var showNombre = qParams.get('n') ? decodeURIComponent(qParams.get('n')) : decodeURIComponent(showSlug).replace(/-/g, ' ').trim();
 
     if (!showNombre) {
       document.querySelector('.msg').textContent = 'Link inválido.';

@@ -268,6 +268,16 @@ body::before{
       </div>
     </div>
 
+    <!-- CERRADO -->
+    <div id="step-cerrado" style="display:none;text-align:center;padding:8px 0">
+      <div style="font-size:48px;margin-bottom:18px;filter:grayscale(1)">🔒</div>
+      <div class="step-title" style="margin-bottom:8px">Inscripciones cerradas</div>
+      <div style="color:var(--gray2);font-size:13px;line-height:1.6">
+        Las inscripciones para este show<br>están momentáneamente cerradas.<br>
+        <span style="color:var(--gray3);font-size:11px;margin-top:8px;display:block">Contactá a RRHH para más información.</span>
+      </div>
+    </div>
+
   </div>
 
   <div class="footer">Movistar Arena · Sistema de sorteos RRHH</div>
@@ -298,6 +308,16 @@ document.getElementById("show-meta").textContent =
 if (!SHOW_ID) {
   document.getElementById("show-nombre").textContent = "Link inválido";
   document.getElementById("show-meta").textContent = "Este formulario no tiene un show configurado.";
+} else {
+  // Verificar si las inscripciones están abiertas
+  callScript({ action: "checkShowActivo", showId: SHOW_ID }).then(res => {
+    if (res.ok && res.activo === false) {
+      document.querySelectorAll(".step").forEach(s => s.style.display = "none");
+      document.getElementById("step-cerrado").style.display = "block";
+    }
+  }).catch(() => {
+    // Si falla el check, no bloqueamos al usuario
+  });
 }
 
 // ── HELPERS ───────────────────────────────────────────────

@@ -69,6 +69,8 @@ function doPost(e) {
       case "leerTracking":           return resp(leerTracking());
       case "getUltimasVictorias":    return resp(getUltimasVictorias(body.nombres));
       case "getShows":               return resp(getShows());
+      case "setShowActivo":          return resp(setShowActivo(body.showId, body.activo));
+      case "checkShowActivo":        return resp(checkShowActivo(body.showId));
       default:                  return resp({ ok: false, error: "Acción desconocida: " + action });
     }
   } catch (err) {
@@ -134,6 +136,10 @@ function inscribir(mail, showId, showNombre, fecha) {
   // Validar que existe en empleados
   const validacion = validarMail(mail);
   if (!validacion.existe) return { ok: false, error: "Mail no encontrado en el registro de empleados" };
+
+  // Verificar que el sorteo esté abierto
+  const estadoSorteo = checkShowActivo(showId);
+  if (!estadoSorteo.activo) return { ok: false, error: "Las inscripciones para este show están cerradas." };
 
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
   const hojaName = "Inscripciones";
@@ -665,8 +671,23 @@ function leerTracking() {
       Logger.log("Error leyendo cols A-B: " + e3.message);
     }
 
+    // Leer estados activo/cerrado de la hoja Config
+    var config = {};
+    try {
+      var configHoja = ss.getSheetByName("Config");
+      if (configHoja) {
+        var configData = configHoja.getDataRange().getValues();
+        for (var ci = 1; ci < configData.length; ci++) {
+          var cId = String(configData[ci][0]).trim();
+          if (cId) config[cId] = String(configData[ci][1]).trim() !== "0";
+        }
+      }
+    } catch(e4) {
+      Logger.log("Error leyendo Config: " + e4.message);
+    }
+
     Logger.log("leerTracking: " + columnas.length + " columnas, " + colaboradores.length + " colaboradores con victorias, ticketsBase: " + ticketsBase);
-    return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase };
+    return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase, config: config };
   } catch(e) {
     Logger.log("Error en leerTracking: " + e.message);
     return { ok: false, error: e.message };
@@ -724,6 +745,55 @@ function getUltimasVictorias(nombres) {
     Logger.log("Error en getUltimasVictorias: " + e.message);
     return { ok: false, error: e.message };
   }
+}
+
+// ============================================================
+//  SET / CHECK SHOW ACTIVO — habilita o deshabilita inscripciones
+//  Usa hoja "Config": col A = showId (slug), col B = "1"/"0"
+// ============================================================
+function setShowActivo(showId, activo) {
+  if (!showId) return { ok: false, error: "showId requerido" };
+  const slug = normalizarShowId(showId);
+
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  let hoja = ss.getSheetByName("Config");
+  if (!hoja) {
+    hoja = ss.insertSheet("Config");
+    hoja.appendRow(["Show ID", "Activo"]);
+    hoja.getRange(1, 1, 1, 2).setFontWeight("bold");
+  }
+
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (normalizarShowId(datos[i][0]) === slug) {
+      hoja.getRange(i + 1, 2).setValue(activo ? "1" : "0");
+      Logger.log("setShowActivo: " + slug + " → " + (activo ? "abierto" : "cerrado"));
+      return { ok: true };
+    }
+  }
+
+  hoja.appendRow([slug, activo ? "1" : "0"]);
+  Logger.log("setShowActivo (nuevo): " + slug + " → " + (activo ? "abierto" : "cerrado"));
+  return { ok: true };
+}
+
+function checkShowActivo(showId) {
+  if (!showId) return { ok: true, activo: true };
+  const slug = normalizarShowId(showId);
+
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  const hoja = ss.getSheetByName("Config");
+  if (!hoja) return { ok: true, activo: true };
+
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (normalizarShowId(datos[i][0]) === slug) {
+      const activo = String(datos[i][1]).trim() !== "0";
+      return { ok: true, activo };
+    }
+  }
+
+  return { ok: true, activo: true }; // por defecto abierto si no está en Config
 }
 
 function testDrive() {

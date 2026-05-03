@@ -243,7 +243,18 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .ev-badge-sort{background:rgba(255,176,32,0.1);color:var(--amber);border:1px solid rgba(255,176,32,0.2)}
 .ev-badge-conf{background:rgba(0,212,255,0.08);color:var(--ice2);border:1px solid rgba(0,212,255,0.18)}
 .ev-badge-done{background:rgba(0,240,160,0.08);color:var(--green);border:1px solid rgba(0,240,160,0.2)}
+.ev-badge-closed{background:rgba(255,61,90,0.08);color:var(--red);border:1px solid rgba(255,61,90,0.2)}
+.ev-card.closed{opacity:0.55}
+.ev-card.closed .ev-card-bar{background:var(--red)!important}
+.ev-card.closed .ev-card-name{color:var(--gray3)}
 .ev-card-btns{display:flex;gap:4px;align-items:center;flex-shrink:0}
+/* Toggle switch */
+.ev-toggle{position:relative;width:30px;height:17px;flex-shrink:0;cursor:pointer;display:flex;align-items:center}
+.ev-toggle input{opacity:0;width:0;height:0;position:absolute}
+.ev-toggle-track{position:absolute;inset:0;background:rgba(255,61,90,0.25);border:1px solid rgba(255,61,90,0.35);border-radius:9px;transition:.2s}
+.ev-toggle-track::before{content:'';position:absolute;width:11px;height:11px;left:2px;top:2px;background:#e05;border-radius:50%;transition:.2s}
+.ev-toggle input:checked~.ev-toggle-track{background:rgba(0,212,255,0.18);border-color:rgba(0,212,255,0.4)}
+.ev-toggle input:checked~.ev-toggle-track::before{transform:translateX(13px);background:var(--ice)}
 
 /* Month tabs */
 .month-tab{flex-shrink:0;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.5px;border:1px solid transparent;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;text-transform:uppercase}
@@ -1119,7 +1130,7 @@ async function api(data){
 }
 
 // STATE
-const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0};
+const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0,config:{}};
 let _mailPreviewTimer=null;
 function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{
@@ -1133,6 +1144,7 @@ const save=()=>{
       sorteo:S.sorteo,
       evActivo:S.evActivo,
       ticketsBase:S.ticketsBase||0,
+      config:S.config||{},
     };
     localStorage.setItem("ma_v6",JSON.stringify(toSave));
   }catch(e){
@@ -1151,6 +1163,7 @@ const load=()=>{
       S.sorteo=parsed.sorteo||{evId:null,lista:[]};
       S.evActivo=parsed.evActivo||null;
       S.ticketsBase=parsed.ticketsBase||0;
+      S.config=parsed.config||{};
       // Always start with empty participantes - sync from Sheets when needed
       S.participantes=[];
       // Sanitize IDs with dots
@@ -1398,6 +1411,31 @@ function guardarGhUrl(){
   }
   toast("URL guardada");
 }
+const _toggling=new Set();
+async function toggleActivo(evId){
+  if(_toggling.has(evId))return;
+  _toggling.add(evId);
+  const ev=S.eventos.find(e=>e.id===evId);
+  if(!ev){_toggling.delete(evId);return;}
+  const slug=_evSlug(ev);
+  const current=S.config[slug]!==false;
+  const newVal=!current;
+  S.config[slug]=newVal;
+  save();
+  renderDash();
+  try{
+    const res=await api({action:"setShowActivo",showId:slug,activo:newVal});
+    if(!res.ok)throw new Error(res.error||"error");
+    toast(newVal?"Inscripciones abiertas":"Inscripciones cerradas");
+  }catch(e){
+    S.config[slug]=current;
+    save();
+    renderDash();
+    toast("Error: "+e.message,"warn");
+  }finally{
+    _toggling.delete(evId);
+  }
+}
 function previewGhUrl(){
   const url=document.getElementById("gh-url-input").value.trim();
   const ev=window._pendingFormEv?S.eventos.find(e=>e.id===window._pendingFormEv):null;
@@ -1470,7 +1508,14 @@ function _evStatus(ev){
   if(env===g.length)return "done";
   return "partial";
 }
+function _evSlug(ev){
+  return ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+}
+function isActivo(ev){
+  return S.config[_evSlug(ev)]!==false;
+}
 function _evBadge(ev){
+  if(!isActivo(ev))return `<span class="ev-badge ev-badge-closed">Cerrado</span>`;
   const g=S.ganadores.filter(x=>x.evId===ev.id);
   const env=g.filter(x=>x.estado==="enviado").length;
   if(!g.length){
@@ -1504,11 +1549,13 @@ function renderEvsByMonth(month){
       const g=S.ganadores.filter(x=>x.evId===ev.id).length;
       const env=S.ganadores.filter(x=>x.evId===ev.id&&x.estado==="enviado").length;
       const act=S.evActivo===ev.id;
+      const actv=isActivo(ev);
       const st=_evStatus(ev);
       let cls="ev-card";
       if(act)cls+=" act";
       else if(st==="done")cls+=" done";
       else if(st==="partial")cls+=" partial";
+      if(!actv)cls+=" closed";
       return `<div class="${cls}" data-sel-ev="${ev.id}" onclick="selEvento(this.dataset.selEv)">
         <div class="ev-card-bar"></div>
         <div class="ev-card-icon">${act?"✓":"▶"}</div>
@@ -1525,6 +1572,10 @@ function renderEvsByMonth(month){
         </div>
         ${_evBadge(ev)}
         <div class="ev-card-btns">
+          <label class="ev-toggle" title="${actv?"Cerrar inscripciones":"Abrir inscripciones"}" onclick="event.stopPropagation();toggleActivo('${ev.id.replace(/'/g,"\\'")}')">
+            <input type="checkbox" ${actv?"checked":""} onclick="event.preventDefault()">
+            <span class="ev-toggle-track"></span>
+          </label>
           <button class="btn bo bsm" style="padding:2px 8px;font-size:10px" data-edit-ev="${ev.id}" onclick="event.stopPropagation();abrirEdit(this.dataset.editEv)" title="Editar">✎</button>
           <button class="btn bo bsm" style="padding:2px 8px;font-size:10px;color:var(--ice2)" data-link-ev="${ev.id}" onclick="event.stopPropagation();copiarLinkForm(this.dataset.linkEv)" title="Copiar link">🔗</button>
         </div>
@@ -2206,6 +2257,7 @@ async function importarDesdeTracking(silente){
 
     if(res.ticketsBase>0)S.ticketsBase=res.ticketsBase;
     if(res.colaboradores&&res.colaboradores.length)S.colaboradores=res.colaboradores;
+    if(res.config)Object.assign(S.config,res.config);
     save();
     if(!silente)toast(totalGan+" ganadores importados de "+cols.length+" shows");
     else if(totalGan>0)toast("Sync: "+totalGan+" ganadores cargados");

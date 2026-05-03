@@ -26,17 +26,17 @@
     var showSlug = parts[parts.length - 1] || '';
     var qParams = new URLSearchParams(window.location.search);
     var showNombre = qParams.get('n') ? decodeURIComponent(qParams.get('n')) : decodeURIComponent(showSlug).replace(/-/g, ' ').trim();
+    var showFecha  = qParams.get('f') ? decodeURIComponent(qParams.get('f')) : '';
+    var showVenue  = qParams.get('v') ? decodeURIComponent(qParams.get('v')) : '';
 
     if (!showNombre) {
       document.querySelector('.msg').textContent = 'Link inválido.';
     } else {
-      // Redirect to formulario with show name
       var base = 'https://sorteobaa.netlify.app/formulario_inscripcion.html';
-      var params = new URLSearchParams({
-        show: showSlug,
-        nombre: showNombre
-      });
-      window.location.href = base + '?' + params.toString();
+      var dest = { show: showSlug, nombre: showNombre };
+      if (showFecha) dest.fecha = showFecha;
+      if (showVenue) dest.venue = showVenue;
+      window.location.href = base + '?' + new URLSearchParams(dest).toString();
     }
   </script>
 </body>

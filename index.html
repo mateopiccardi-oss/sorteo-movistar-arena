@@ -1372,8 +1372,10 @@ function copiarLinkForm(id){
 }
 function _generarYCopiarLink(ev){
   const idSlug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
-  const nombre=encodeURIComponent(ev.show||ev.nombre);
-  const shortLink="https://sorteobaa.netlify.app/s/"+idSlug+"?n="+nombre;
+  const qp=new URLSearchParams({n:ev.show||ev.nombre});
+  if(ev.fecha)qp.set("f",ev.fecha);
+  if(ev.venue)qp.set("v",ev.venue);
+  const shortLink="https://sorteobaa.netlify.app/s/"+idSlug+"?"+qp.toString();
   navigator.clipboard.writeText(shortLink).then(()=>{
     toast("Link copiado: "+shortLink);
   }).catch(()=>{

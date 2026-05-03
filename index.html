@@ -705,6 +705,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     <div class="ct">Sincronizar desde Google Sheets</div>
     <div style="font-size:12px;color:var(--gray2);margin-bottom:10px">Trae los inscriptos que se anotaron vía el formulario público.</div>
     <button class="btn bp bsm" id="btn-sync" onclick="sincronizar()">↻ Sincronizar</button>
+    <span id="last-sync-txt" style="font-size:10px;color:var(--gray3);margin-left:6px"></span>
     <div id="sync-res" style="margin-top:7px;font-size:12px;color:var(--gray2);display:none"></div>
   </div>
 
@@ -1053,6 +1054,10 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <div><div style="font-size:12px;font-weight:600">Regla anti-repeticion</div></div>
       <label class="sw-w"><input type="checkbox" id="edit-anti"><span class="sw-t"><span class="sw-th"></span></span></label>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--rsm);border:1px solid var(--line);background:rgba(255,255,255,0.03);margin-bottom:12px">
+      <div><div style="font-size:12px;font-weight:600">Cerrar automáticamente</div><div style="font-size:10px;color:var(--gray3);margin-top:2px">Dejá vacío para no programar</div></div>
+      <input id="edit-closeat" type="datetime-local" style="background:rgba(255,255,255,0.04);border:1px solid var(--line2);border-radius:6px;color:var(--white);font-size:12px;padding:5px 8px;outline:none;color-scheme:dark">
+    </div>
     <div class="modal-acts">
       <button class="btn br bsm" onclick="eliminarEvento()">Eliminar</button>
       <button class="btn bo" onclick="closeModal('modal-edit')">Cancelar</button>
@@ -1130,8 +1135,10 @@ async function api(data){
 }
 
 // STATE
-const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0,config:{}};
+const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:null,lista:[]},csv:{evId:null,rows:[]},evActivo:null,ticketsBase:0,config:{},schedules:{}};
 let _mailPreviewTimer=null;
+let _autoSyncTimer=null;
+let _lastAutoSync=null;
 function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{
   try{
@@ -1145,6 +1152,7 @@ const save=()=>{
       evActivo:S.evActivo,
       ticketsBase:S.ticketsBase||0,
       config:S.config||{},
+      schedules:S.schedules||{},
     };
     localStorage.setItem("ma_v6",JSON.stringify(toSave));
   }catch(e){
@@ -1164,6 +1172,7 @@ const load=()=>{
       S.evActivo=parsed.evActivo||null;
       S.ticketsBase=parsed.ticketsBase||0;
       S.config=parsed.config||{};
+      S.schedules=parsed.schedules||{};
       // Always start with empty participantes - sync from Sheets when needed
       S.participantes=[];
       // Sanitize IDs with dots
@@ -1333,6 +1342,8 @@ function abrirEdit(id){
   document.getElementById("edit-venue").value=ev.venue||"";
   document.getElementById("edit-form").value=ev.formUrl||"";
   document.getElementById("edit-anti").checked=ev.antiRep!==false;
+  const slug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  document.getElementById("edit-closeat").value=S.schedules[slug]||"";
   document.getElementById("modal-edit").classList.add("show");
 }
 function guardarEvento(){
@@ -1351,7 +1362,11 @@ function guardarEvento(){
   ev.formUrl=document.getElementById("edit-form").value.trim();
   ev.antiRep=document.getElementById("edit-anti").checked;
   S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const slug2=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  const closeAt=document.getElementById("edit-closeat").value;
+  S.schedules[slug2]=closeAt;
   save();
+  api({action:"setShowSchedule",showId:slug2,closeAt:closeAt}).catch(()=>{});
   closeModal("modal-edit");
   toast("Evento actualizado");
   updateTopbar();
@@ -1383,17 +1398,25 @@ function copiarLinkForm(id){
   if(!ev)return;
   _generarYCopiarLink(ev);
 }
-function _generarYCopiarLink(ev){
+function _buildFormLink(ev){
   const idSlug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
   const qp=new URLSearchParams({n:ev.show||ev.nombre});
   if(ev.fecha)qp.set("f",ev.fecha);
   if(ev.venue)qp.set("v",ev.venue);
-  const shortLink="https://sorteobaa.netlify.app/s/"+idSlug+"?"+qp.toString();
+  return "https://sorteobaa.netlify.app/s/"+idSlug+"?"+qp.toString();
+}
+function _generarYCopiarLink(ev){
+  const shortLink=_buildFormLink(ev);
   navigator.clipboard.writeText(shortLink).then(()=>{
     toast("Link copiado: "+shortLink);
   }).catch(()=>{
     prompt("Copiá este link:",shortLink);
   });
+}
+function verFormulario(evId){
+  const ev=S.eventos.find(e=>e.id===evId);
+  if(!ev)return;
+  window.open(_buildFormLink(ev),'_blank');
 }
 function guardarGhUrl(){
   const url=document.getElementById("gh-url-input").value.trim();
@@ -1437,12 +1460,9 @@ async function toggleActivo(evId){
   }
 }
 function previewGhUrl(){
-  const url=document.getElementById("gh-url-input").value.trim();
   const ev=window._pendingFormEv?S.eventos.find(e=>e.id===window._pendingFormEv):null;
-  if(!url||!ev)return;
-  const base=url.replace(/\/+$/,"");
-  const params=new URLSearchParams({show:ev.id,nombre:ev.show||ev.nombre,fecha:ev.fecha,venue:ev.venue||"Movistar Arena"});
-  const link=base+"?"+params.toString();
+  if(!ev)return;
+  const link=_buildFormLink(ev);
   document.getElementById("gh-preview-url").textContent=link;
   document.getElementById("gh-preview").style.display="block";
 }
@@ -1551,6 +1571,8 @@ function renderEvsByMonth(month){
       const act=S.evActivo===ev.id;
       const actv=isActivo(ev);
       const st=_evStatus(ev);
+      const slug2=_evSlug(ev);
+      const closeAt=S.schedules[slug2];
       let cls="ev-card";
       if(act)cls+=" act";
       else if(st==="done")cls+=" done";
@@ -1571,6 +1593,7 @@ function renderEvsByMonth(month){
           <div class="ev-cstat"><div class="ev-cstat-v" style="color:${env&&env===g?"var(--green)":env?"var(--amber)":"var(--gray3)"}">${env}</div><div class="ev-cstat-l">env.</div></div>
         </div>
         ${_evBadge(ev)}
+        ${closeAt?`<span class="ev-badge" style="background:rgba(255,176,32,0.08);color:var(--amber);border:1px solid rgba(255,176,32,0.2);font-size:9px">⏰ ${new Date(closeAt).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})} ${new Date(closeAt).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>`:""}
         <div class="ev-card-btns">
           <label class="ev-toggle" title="${actv?"Cerrar inscripciones":"Abrir inscripciones"}" onclick="event.stopPropagation();toggleActivo('${ev.id.replace(/'/g,"\\'")}')">
             <input type="checkbox" ${actv?"checked":""} onclick="event.preventDefault()">
@@ -1578,6 +1601,7 @@ function renderEvsByMonth(month){
           </label>
           <button class="btn bo bsm" style="padding:2px 8px;font-size:10px" data-edit-ev="${ev.id}" onclick="event.stopPropagation();abrirEdit(this.dataset.editEv)" title="Editar">✎</button>
           <button class="btn bo bsm" style="padding:2px 8px;font-size:10px;color:var(--ice2)" data-link-ev="${ev.id}" onclick="event.stopPropagation();copiarLinkForm(this.dataset.linkEv)" title="Copiar link">🔗</button>
+          <button class="btn bo bsm" style="padding:2px 8px;font-size:10px;color:var(--gray2)" data-view-ev="${ev.id}" onclick="event.stopPropagation();verFormulario(this.dataset.viewEv)" title="Ver formulario">👁</button>
         </div>
       </div>`;
     }).join("");
@@ -1719,11 +1743,43 @@ function toggleShow(show){
     if(el.dataset.show===show)el.classList.toggle('open',!isOpen);
   });
 }
+function stopAutoSync(){if(_autoSyncTimer){clearInterval(_autoSyncTimer);_autoSyncTimer=null;}}
+async function _silentSync(evId){
+  const ev=S.eventos.find(e=>e.id===evId);
+  if(!ev||!isActivo(ev)){stopAutoSync();return;}
+  try{
+    const slug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+    const res=await api({action:"getInscriptos",showId:slug});
+    if(!res.ok||!res.inscriptos)return;
+    let n=0;
+    res.inscriptos.forEach(p=>{
+      const existe=S.participantes.find(x=>x.email?.toLowerCase()===p.mail?.toLowerCase()&&x.evId===evId);
+      if(!existe){S.participantes.push({id:Date.now()+Math.random(),evId:evId,nombre:p.nombre,email:p.mail,tel:"",dni:"",fechaReg:p.fechaInscripcion||new Date().toISOString()});n++;}
+    });
+    _lastAutoSync=new Date();
+    if(n>0){save();renderDash();toast(n+" nuevo"+(n!==1?"s":"")+" inscripto"+(n!==1?"s":""));}
+    else renderLastSync();
+  }catch(e){}
+}
+function startAutoSync(evId){
+  stopAutoSync();
+  const ev=S.eventos.find(e=>e.id===evId);
+  if(!ev||!isActivo(ev))return;
+  _lastAutoSync=new Date();
+  _autoSyncTimer=setInterval(()=>_silentSync(evId),2*60*1000);
+}
+function renderLastSync(){
+  const el=document.getElementById("last-sync-txt");
+  if(!el||!_lastAutoSync)return;
+  const mins=Math.floor((Date.now()-_lastAutoSync)/60000);
+  el.textContent=mins===0?"hace un momento":`hace ${mins} min`;
+}
 function selEvento(id){
   S.evActivo=id;
   save();
   updateTopbar();
   toast("Evento activo: "+id);
+  startAutoSync(id);
   viewWiz();
 }
 
@@ -2258,6 +2314,7 @@ async function importarDesdeTracking(silente){
     if(res.ticketsBase>0)S.ticketsBase=res.ticketsBase;
     if(res.colaboradores&&res.colaboradores.length)S.colaboradores=res.colaboradores;
     if(res.config)Object.assign(S.config,res.config);
+    if(res.schedules)Object.assign(S.schedules,res.schedules);
     save();
     if(!silente)toast(totalGan+" ganadores importados de "+cols.length+" shows");
     else if(totalGan>0)toast("Sync: "+totalGan+" ganadores cargados");
@@ -2579,6 +2636,8 @@ async function sincronizar(){
   const msg="✓ "+n+" nuevo(s) · "+d+" ya existían";
   const res_el=document.getElementById("sync-res");
   res_el.textContent=msg; res_el.style.display="block";
+  _lastAutoSync=new Date();
+  renderLastSync();
   toast(msg); renderPart(); renderDash();
 }
 function dropCSV(e){e.preventDefault();document.getElementById("csv-zone").classList.remove("drag");parseCSV(e.dataTransfer.files[0]);}

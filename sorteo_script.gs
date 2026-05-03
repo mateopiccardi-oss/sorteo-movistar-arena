@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  SORTEO MOVISTAR ARENA — Apps Script completo
 //  
 //  CONFIGURACIÓN INICIAL:
@@ -71,6 +71,7 @@ function doPost(e) {
       case "getShows":               return resp(getShows());
       case "setShowActivo":          return resp(setShowActivo(body.showId, body.activo));
       case "checkShowActivo":        return resp(checkShowActivo(body.showId));
+      case "setShowSchedule":        return resp(setShowSchedule(body.showId, body.closeAt));
       default:                  return resp({ ok: false, error: "Acción desconocida: " + action });
     }
   } catch (err) {
@@ -673,13 +674,18 @@ function leerTracking() {
 
     // Leer estados activo/cerrado de la hoja Config
     var config = {};
+    var schedules = {};
     try {
       var configHoja = ss.getSheetByName("Config");
       if (configHoja) {
         var configData = configHoja.getDataRange().getValues();
         for (var ci = 1; ci < configData.length; ci++) {
           var cId = String(configData[ci][0]).trim();
-          if (cId) config[cId] = String(configData[ci][1]).trim() !== "0";
+          if (cId) {
+            config[cId] = String(configData[ci][1]).trim() !== "0";
+            var closeAtVal = String(configData[ci][2] || "").trim();
+            if (closeAtVal) schedules[cId] = closeAtVal;
+          }
         }
       }
     } catch(e4) {
@@ -687,7 +693,7 @@ function leerTracking() {
     }
 
     Logger.log("leerTracking: " + columnas.length + " columnas, " + colaboradores.length + " colaboradores con victorias, ticketsBase: " + ticketsBase);
-    return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase, config: config };
+    return { ok: true, columnas: columnas, colaboradores: colaboradores, totalEmpleados: totalEmpleados, ticketsBase: ticketsBase, config: config, schedules: schedules };
   } catch(e) {
     Logger.log("Error en leerTracking: " + e.message);
     return { ok: false, error: e.message };
@@ -794,6 +800,91 @@ function checkShowActivo(showId) {
   }
 
   return { ok: true, activo: true }; // por defecto abierto si no está en Config
+}
+
+// ============================================================
+//  SET SHOW SCHEDULE — guarda la fecha de cierre automático
+//  Usa hoja "Config": col A = showId (slug), col B = activo, col C = closeAt
+// ============================================================
+function setShowSchedule(showId, closeAt) {
+  if (!showId) return { ok: false, error: "showId requerido" };
+  const slug = normalizarShowId(showId);
+
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  let hoja = ss.getSheetByName("Config");
+  if (!hoja) {
+    hoja = ss.insertSheet("Config");
+    hoja.appendRow(["Show ID", "Activo", "Cerrar en"]);
+    hoja.getRange(1, 1, 1, 3).setFontWeight("bold");
+  }
+
+  const datos = hoja.getDataRange().getValues();
+  for (let i = 1; i < datos.length; i++) {
+    if (normalizarShowId(datos[i][0]) === slug) {
+      hoja.getRange(i + 1, 3).setValue(closeAt || "");
+      Logger.log("setShowSchedule: " + slug + " → " + closeAt);
+      return { ok: true };
+    }
+  }
+
+  // Row not found — append new row with current activo=1 and closeAt
+  hoja.appendRow([slug, "1", closeAt || ""]);
+  Logger.log("setShowSchedule (nuevo): " + slug + " → " + closeAt);
+  return { ok: true };
+}
+
+// ============================================================
+//  CHECK AUTO CLOSE — cierra shows cuyo closeAt ya pasó
+//  Devuelve: { ok, closed: [] }
+// ============================================================
+function checkAutoClose() {
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  const hoja = ss.getSheetByName("Config");
+  if (!hoja) return { ok: true, closed: [] };
+
+  const datos = hoja.getDataRange().getValues();
+  const now = new Date();
+  const closed = [];
+
+  for (let i = 1; i < datos.length; i++) {
+    const showId = String(datos[i][0]).trim();
+    const activo = String(datos[i][1]).trim();
+    const closeAt = String(datos[i][2] || "").trim();
+
+    if (!showId || activo === "0" || !closeAt) continue;
+
+    const closeDate = new Date(closeAt);
+    if (!isNaN(closeDate) && closeDate <= now) {
+      setShowActivo(showId, false);
+      closed.push(showId);
+      Logger.log("checkAutoClose: cerrado " + showId + " (closeAt=" + closeAt + ")");
+    }
+  }
+
+  return { ok: true, closed: closed };
+}
+
+// ============================================================
+//  SETUP AUTO CLOSE — crea el trigger de tiempo para checkAutoClose
+//  IMPORTANTE: Ejecutar esta función UNA VEZ desde el editor de Apps Script
+//  para activar el cierre automático por horario cada 5 minutos.
+// ============================================================
+function setupAutoClose() {
+  // Eliminar triggers existentes para evitar duplicados
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === "checkAutoClose") {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+
+  // Crear nuevo trigger cada 5 minutos
+  ScriptApp.newTrigger("checkAutoClose")
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+
+  Logger.log("setupAutoClose: trigger creado para checkAutoClose cada 5 minutos");
+  return { ok: true, mensaje: "Trigger creado. checkAutoClose se ejecutará cada 5 minutos." };
 }
 
 function testDrive() {

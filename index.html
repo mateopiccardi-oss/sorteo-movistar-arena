@@ -647,9 +647,13 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
   <div class="card">
     <div class="coll-header" onclick="toggleColl('coll-ranking')">
-      <div class="fb" style="flex:1;margin-bottom:0">
+      <div class="fb" style="flex:1;margin-bottom:0;gap:8px;flex-wrap:wrap">
         <div class="ct" style="margin:0">Ranking de victorias</div>
-        <div class="sbox" style="margin:0;width:170px" onclick="event.stopPropagation()"><input id="search-hc" placeholder="Buscar…" oninput="renderHC(this.value)"></div>
+        <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+          <div class="sbox" style="margin:0;width:130px"><input id="search-hc" placeholder="Buscar…" oninput="renderHC(this.value)"></div>
+          <button id="hc-btn-desc" onclick="setHCSort(false)" style="font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--ice-line);background:rgba(0,212,255,0.15);color:var(--ice2);cursor:pointer;font-weight:600;white-space:nowrap">↓ Desc</button>
+          <button id="hc-btn-asc" onclick="setHCSort(true)" style="font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--line2);background:transparent;color:var(--gray3);cursor:pointer;white-space:nowrap">↑ Asc</button>
+        </div>
       </div>
       <span class="coll-arrow open" id="arrow-ranking">▼</span>
     </div>
@@ -816,11 +820,16 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     </div>
     <div class="card" id="gan-excl" style="display:none"><div class="ct">Excluidos</div><div id="gan-excl-txt"></div></div>
     <div class="card" id="gan-recom" style="display:none;margin-bottom:10px">
-      <div class="fb" style="margin-bottom:8px">
-        <div style="font-size:13px;font-weight:700;color:var(--ice2);margin:0">💡 Recomendaciones</div>
-        <div style="font-size:10px;color:var(--gray3)">Inscriptos que hace más tiempo no ganan</div>
+      <div class="coll-header" onclick="toggleColl('coll-recom')" style="cursor:pointer">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--ice2);margin:0">👥 Inscriptos con menos victorias</div>
+          <div style="font-size:10px;color:var(--gray3);margin-top:2px" id="gan-recom-sub">Cargando…</div>
+        </div>
+        <span class="coll-arrow" id="arrow-recom">▼</span>
       </div>
-      <div id="gan-recom-list"></div>
+      <div class="coll-body" id="coll-recom">
+        <div id="gan-recom-list" style="padding-top:8px"></div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid rgba(0,212,255,0.18);border-radius:var(--r);background:rgba(0,212,255,0.04);margin-bottom:12px" id="gan-confirm-banner">
       <div style="flex:1">
@@ -2546,17 +2555,33 @@ function renderDash(){
 }
 
 // HEADCOUNT
+let _hcAsc=false;
+let _hcShowAll=false;
+
+function setHCSort(asc){
+  _hcAsc=asc;
+  _hcShowAll=false;
+  const bd=document.getElementById("hc-btn-desc");
+  const ba=document.getElementById("hc-btn-asc");
+  if(bd&&ba){
+    const ON="font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--ice-line);background:rgba(0,212,255,0.15);color:var(--ice2);cursor:pointer;font-weight:600;white-space:nowrap";
+    const OFF="font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--line2);background:transparent;color:var(--gray3);cursor:pointer;white-space:nowrap";
+    bd.style.cssText=asc?OFF:ON;
+    ba.style.cssText=asc?ON:OFF;
+  }
+  renderHC();
+}
+
 function renderHC(q){
   q=q||document.getElementById("search-hc")?.value||"";
   const cv=document.getElementById("chart-hc");
   const el=document.getElementById("dash-hc");
+  const LIMIT=20;
 
-  // Build lista: prefer S.colaboradores (from sheet col A+B, authoritative)
-  // Fall back to counting from S.ganadores if colaboradores not loaded yet
   const _excluir=/^(total|tickets|cuenta\s*tickets?|subtotal|suma)$/i;
   let lista=[];
   if(S.colaboradores&&S.colaboradores.length){
-    lista=S.colaboradores.filter(c=>!_excluir.test(c.nombre.trim())).map(c=>({nombre:c.nombre,wins:c.victorias}));
+    lista=S.colaboradores.filter(c=>!_excluir.test(c.nombre.trim())).map(c=>({nombre:c.nombre,wins:c.victorias||0}));
   } else {
     if(!S.ganadores.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
     const map={};
@@ -2565,33 +2590,52 @@ function renderHC(q){
       if(!map[k])map[k]={nombre:g.nombre,wins:0};
       map[k].wins++;
     });
-    lista=Object.values(map).sort((a,b)=>b.wins-a.wins);
+    lista=Object.values(map);
   }
 
   if(!lista.length){cv.style.display="none";el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-txt">Sin sorteos</div></div>';return;}
+
+  lista.sort((a,b)=>_hcAsc?(a.wins-b.wins)||a.nombre.localeCompare(b.nombre):(b.wins-a.wins)||a.nombre.localeCompare(b.nombre));
+  lista=lista.map((p,idx)=>({...p,_pos:idx}));
+
   if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase()));
   if(!lista.length){cv.style.display="none";el.innerHTML='<div style="text-align:center;color:var(--gray3);padding:12px;font-size:12px">Sin resultados</div>';return;}
 
   cv.style.display="none";
-  const maxW=lista[0]?.wins||1;
-  el.innerHTML=lista.map((p,i)=>{
+  const total=lista.length;
+  const mostrar=(_hcShowAll||total<=LIMIT)?lista:lista.slice(0,LIMIT);
+  const maxW=Math.max(...lista.map(p=>p.wins))||1;
+
+  let html=mostrar.map(p=>{
     const w=p.wins;
-    const pct=Math.round(w/maxW*100);
-    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+    const pct=maxW>0?Math.round(w/maxW*100):0;
+    const sinVic=w===0;
+    const pos=p._pos;
+    const medal=!_hcAsc?(pos===0?"🥇":pos===1?"🥈":pos===2?"🥉":""):"";
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);border:1px solid var(--line2);background:rgba(255,255,255,0.025);margin-bottom:5px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.025)'">
-      <div style="font-size:11px;font-weight:600;color:var(--gray3);width:18px;text-align:center;flex-shrink:0">${medal||i+1}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--gray3);width:18px;text-align:center;flex-shrink:0">${medal||(pos+1)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+        <div style="font-size:13px;font-weight:600;color:${sinVic?"var(--gray3)":"var(--white)"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
         <div style="margin-top:5px;height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden">
-          <div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ice2),var(--ice));transition:width .4s"></div>
+          <div style="width:${pct}%;height:100%;border-radius:2px;background:${sinVic?"rgba(255,255,255,0.1)":"linear-gradient(90deg,var(--ice2),var(--ice))"};transition:width .4s"></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <span style="font-size:15px;font-weight:700;color:var(--white)">${w}</span>
-        <span style="font-size:11px;color:var(--gray3)">${w===1?"victoria":"victorias"}</span>
+        ${sinVic
+          ?`<span style="font-size:11px;color:var(--gray3)">Sin victorias</span>`
+          :`<span style="font-size:15px;font-weight:700;color:var(--white)">${w}</span><span style="font-size:11px;color:var(--gray3)">${w===1?"victoria":"victorias"}</span>`
+        }
       </div>
     </div>`;
   }).join("");
+
+  if(!_hcShowAll&&total>LIMIT){
+    html+=`<div style="text-align:center;padding:10px 0 4px"><button onclick="_hcShowAll=true;renderHC()" style="font-size:11px;color:var(--ice2);background:none;border:1px solid var(--ice-line);border-radius:4px;padding:5px 14px;cursor:pointer">Ver todos (${total})</button></div>`;
+  } else if(_hcShowAll&&total>LIMIT){
+    html+=`<div style="text-align:center;padding:10px 0 4px"><button onclick="_hcShowAll=false;renderHC()" style="font-size:11px;color:var(--gray3);background:none;border:1px solid var(--line2);border-radius:4px;padding:5px 14px;cursor:pointer">Ver menos</button></div>`;
+  }
+
+  el.innerHTML=html;
 }
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 
@@ -2889,51 +2933,70 @@ function quitarGan(i){S.sorteo.lista.splice(i,1);renderStep3();}
 async function renderRecomendaciones(){
   const panel=document.getElementById("gan-recom");
   const listEl=document.getElementById("gan-recom-list");
+  const subEl=document.getElementById("gan-recom-sub");
   if(!panel||!listEl)return;
   const evId=S.evActivo;
   if(!evId){panel.style.display="none";return;}
 
-  // Participantes del evento actual que no están ya en la lista propuesta
   const selEmails=new Set(S.sorteo.lista.map(g=>g.email.toLowerCase()));
-  const candidatos=S.participantes.filter(p=>p.evId===evId&&!selEmails.has(p.email.toLowerCase()));
+  const candidatos=S.participantes.filter(p=>p.evId===evId);
   if(!candidatos.length){panel.style.display="none";return;}
 
   panel.style.display="block";
-  listEl.innerHTML='<div style="color:var(--gray3);font-size:11px;padding:6px 0">Consultando Sheets…</div>';
+  if(subEl)subEl.textContent="Consultando Sheets…";
+  listEl.innerHTML='<div style="color:var(--gray3);font-size:11px;padding:6px 0">Cargando…</div>';
 
+  // Wins desde S.colaboradores (autoritativo) o fallback a S.ganadores
+  const _excluir=/^(total|tickets|cuenta\s*tickets?|subtotal|suma)$/i;
+  const winsMap={};
+  if(S.colaboradores&&S.colaboradores.length){
+    S.colaboradores.filter(c=>!_excluir.test(c.nombre.trim())).forEach(c=>{winsMap[c.nombre.trim().toUpperCase()]=c.victorias||0;});
+  } else {
+    S.ganadores.forEach(g=>{const k=g.nombre.trim().toUpperCase();winsMap[k]=(winsMap[k]||0)+1;});
+  }
+  candidatos.forEach(p=>{p._wins=winsMap[p.nombre.trim().toUpperCase()]||0;});
+
+  // Última victoria desde Sheets
   const nombres=candidatos.map(p=>p.nombre);
   const res=await api({action:"getUltimasVictorias",nombres});
-  if(!res.ok){
-    listEl.innerHTML=`<div style="font-size:11px;color:var(--red)">Error al consultar Sheets: ${res.error||"sin respuesta"}</div>`;
-    return;
-  }
-
-  // Mapear resultados por nombre (case-insensitive)
   const mapaVic={};
-  (res.data||[]).forEach(r=>{mapaVic[r.nombre.trim().toUpperCase()]=r.ultimaVictoria||null;});
-
-  // Enriquecer candidatos con su última victoria desde el sheet
+  if(res.ok)(res.data||[]).forEach(r=>{mapaVic[r.nombre.trim().toUpperCase()]=r.ultimaVictoria||null;});
+  else if(subEl)subEl.textContent="Sin conexión a Sheets — mostrando datos locales";
   candidatos.forEach(p=>{p._ultimaVic=mapaVic[p.nombre.trim().toUpperCase()]||null;});
 
-  // Ordenar: nunca ganó primero, luego por última victoria más antigua
+  // Ordenar: menos wins primero, luego última victoria más antigua, nulls primero
   candidatos.sort((a,b)=>{
+    if(a._wins!==b._wins)return a._wins-b._wins;
     if(!a._ultimaVic&&!b._ultimaVic)return 0;
     if(!a._ultimaVic)return -1;
     if(!b._ultimaVic)return 1;
     return a._ultimaVic.localeCompare(b._ultimaVic);
   });
 
-  const top=candidatos.slice(0,5);
+  const top=candidatos.slice(0,20);
+  if(subEl)subEl.textContent=`Top ${top.length} de ${candidatos.length} inscriptos · ordenados por menos victorias`;
+
   listEl.innerHTML=top.map(p=>{
-    const label=p._ultimaVic
-      ?`Última victoria: ${p._ultimaVic.split("-").reverse().join("/")}`
-      :`<span style="color:var(--green);font-weight:600">Nunca ganó</span>`;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid var(--line2);background:rgba(255,255,255,0.03);margin-bottom:5px">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--white)">${p.nombre}</div>
+    const w=p._wins;
+    const yaAgregado=selEmails.has(p.email.toLowerCase());
+    const badgeColor=w===0?"var(--green)":w<=2?"var(--amber)":"var(--gray3)";
+    const label=w===0
+      ?`<span style="color:var(--green);font-weight:600">Nunca ganó</span>`
+      :p._ultimaVic
+        ?`Última victoria: ${p._ultimaVic.split("-").reverse().join("/")}`
+        :`${w} ${w===1?"victoria":"victorias"}`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;border:1px solid var(--line2);background:rgba(255,255,255,0.03);margin-bottom:5px">
+      <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px solid ${badgeColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:12px;font-weight:700;color:${badgeColor}">${w}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
         <div style="font-size:10px;color:var(--gray3);margin-top:1px">${label}</div>
       </div>
-      <button class="btn bo bsm" onclick="agregarRecomendado('${p.id}')">+ Agregar</button>
+      ${yaAgregado
+        ?`<button class="btn bo bsm" disabled style="opacity:0.4;font-size:11px;cursor:default">✓ Ya agregado</button>`
+        :`<button class="btn bo bsm" onclick="agregarRecomendado('${p.id}')">+ Agregar</button>`
+      }
     </div>`;
   }).join("");
 }

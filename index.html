@@ -139,7 +139,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .uz-s{font-size:10px;color:var(--gray3);margin-top:2px}
 
 /* DRUM */
-.drum-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:38px 20px;border:1px solid rgba(0,212,255,0.12);border-radius:var(--r);background:rgba(20,32,50,0.95);margin-bottom:10px;position:relative;overflow:hidden}
+.drum-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px 32px;border:1px solid rgba(0,212,255,0.12);border-radius:var(--r);background:rgba(20,32,50,0.95);margin-bottom:14px;position:relative;overflow:hidden}
 .drum-wrap::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.1) 0%,transparent 65%);pointer-events:none}
 .drum-ew{font-size:8px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ice);opacity:.5;margin-bottom:8px}
 .drum{font-family:var(--fd);font-size:60px;font-weight:700;letter-spacing:2px;color:var(--white);min-height:72px;text-align:center;position:relative;z-index:1;text-transform:uppercase;text-shadow:0 0 50px rgba(0,212,255,0.3)}
@@ -752,45 +752,37 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-2">
   <div class="ph"><div class="ph-eye">Paso 2</div><div class="ph-t">Sorteo</div><div class="ph-d" id="wd2"></div></div>
 
-  <!-- Contexto del evento -->
-  <div id="sort-ctx" style="display:none;border:1px solid rgba(0,212,255,0.15);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;background:rgba(0,212,255,0.04)">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--ice);margin-bottom:2px">Show</div>
-        <div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.5px" id="sort-ctx-show"></div>
-        <div style="font-size:11px;color:var(--gray3);margin-top:2px" id="sort-ctx-fecha"></div>
-      </div>
-      <div style="display:flex;gap:12px;flex-shrink:0">
-        <div style="text-align:center;padding:8px 14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);border-radius:var(--rsm)">
-          <div style="font-family:var(--fd);font-size:28px;font-weight:700;color:var(--ice2);line-height:1" id="sort-ctx-cant">0</div>
-          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px">a sortear</div>
-        </div>
-        <div style="text-align:center;padding:8px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:var(--rsm)">
-          <div style="font-family:var(--fd);font-size:28px;font-weight:700;color:var(--white);line-height:1" id="sort-ctx-aptos">0</div>
-          <div style="font-size:8px;color:var(--gray3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px">habilitados</div>
-        </div>
+  <div class="drum-wrap">
+    <!-- Contexto compacto del evento -->
+    <div id="sort-ctx" style="display:none;text-align:center;margin-bottom:20px;width:100%">
+      <div style="font-family:var(--fd);font-size:15px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px" id="sort-ctx-show"></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--gray3)">
+        <span id="sort-ctx-fecha"></span>
+        <span style="opacity:.35">·</span>
+        <span><span style="color:var(--ice2);font-weight:700" id="sort-ctx-cant">0</span> a sortear</span>
+        <span style="opacity:.35">·</span>
+        <span><span style="font-weight:600;color:var(--white)" id="sort-ctx-aptos">0</span> habilitados</span>
       </div>
     </div>
-  </div>
 
-  <div id="sort-al" style="display:none;margin-bottom:10px"><div class="al aii" id="sort-al-txt"></div></div>
+    <!-- Alerta de elegibilidad -->
+    <div id="sort-al" style="display:none;width:100%;margin-bottom:16px">
+      <div class="al aii" id="sort-al-txt"></div>
+    </div>
 
-  <div class="drum-wrap">
     <div class="drum-ew">Sorteando</div>
     <div class="drum" id="drum">?</div>
     <div class="drum-sub" id="drum-sub">Listo para sortear</div>
   </div>
 
-  <div class="flex" style="margin-bottom:10px">
+  <div class="flex" style="margin-bottom:14px">
     <button class="btn bp" id="btn-sort" onclick="ejecutarSorteo()">▶ Iniciar sorteo</button>
     <button class="btn bo" id="btn-reset" style="display:none" onclick="resetSorteo()">↺ Reiniciar</button>
   </div>
 
   <div id="res-sort" style="display:none">
-    <div class="card">
-      <div class="ct">Resultado del sorteo</div>
-      <div id="res-list"></div>
-    </div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);margin-bottom:10px">Resultado</div>
+    <div id="res-list"></div>
   </div>
 
   <div class="nav-btns">
@@ -2823,6 +2815,10 @@ function ejecutarSorteo(){
   const drum=document.getElementById("drum"),sub=document.getElementById("drum-sub");
   const wrap=document.querySelector(".drum-wrap");
   const cant=Math.min(ev.cantidad,aptos.length);
+  // Escalar velocidad según cantidad de ganadores
+  const tickMs   = cant>30?45 : cant>15?55 : cant>8?65 : 75;
+  const ticks    = cant>30?()=>4+Math.floor(Math.random()*3) : cant>15?()=>8+Math.floor(Math.random()*4) : cant>8?()=>15+Math.floor(Math.random()*5) : ()=>28+Math.floor(Math.random()*10);
+  const nextDelay= cant>30?200 : cant>15?400 : cant>8?700 : 1100;
   let gans=[],idx=0;
   function uno(){
     if(idx>=cant){
@@ -2841,7 +2837,7 @@ function ejecutarSorteo(){
     drum.classList.remove("win","reveal");
     drum.classList.add("spin");
     let t=0;
-    const totalTicks=28+Math.floor(Math.random()*10);
+    const totalTicks=ticks();
     const iv=setInterval(()=>{
       drum.textContent=disp[Math.floor(Math.random()*disp.length)].nombre.split(" ")[0].toUpperCase();
       t++;
@@ -2862,18 +2858,18 @@ function ejecutarSorteo(){
         // Glow win
         setTimeout(()=>{drum.classList.remove("reveal");drum.classList.add("win");},560);
         gans.push(g);idx++;
-        setTimeout(uno,1100);
+        setTimeout(uno,nextDelay);
       }
-    },75);
+    },tickMs);
   }
   uno();
 }
 function mostrarRes(gans){
   document.getElementById("res-sort").style.display="block";
   document.getElementById("res-list").innerHTML=gans.map((g,i)=>
-    `<div class="res-item-anim" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);animation-delay:${i*0.1}s">
-      <span style="font-family:var(--fd);font-size:26px;color:var(--ice2);width:28px;opacity:.5">${i+1}</span>
-      <div><div style="font-weight:500;font-size:13px">${g.nombre}</div><div style="font-size:10px;color:var(--gray2)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
+    `<div class="res-item-anim" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--rsm);background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.1);margin-bottom:6px;animation-delay:${i*0.1}s">
+      <span style="font-family:var(--fd);font-size:18px;color:var(--ice2);width:22px;text-align:center;opacity:.45;flex-shrink:0">${i+1}</span>
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.nombre}</div><div style="font-size:10px;color:var(--gray3);margin-top:1px">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
     </div>`
   ).join("");
 }
@@ -3057,6 +3053,9 @@ async function confirmarGanadores(){
   const ev=S.eventos.find(e=>e.id===evId);
   if(!ev){toast("Evento no encontrado","warn");return;}
 
+  // Borrar ganadores pendientes previos del mismo evento para que la lista refleje exactamente lo confirmado ahora
+  S.ganadores=S.ganadores.filter(g=>!(g.evId===evId&&g.estado!=="enviado"));
+
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
@@ -3064,6 +3063,7 @@ async function confirmarGanadores(){
   }));
   S.sorteo={evId:null,lista:[]};
   save();
+  _ganExp.add(evId);
   toast(lista.length+" ganador(es) confirmados — sincronizando Sheets…");
   mostrarPantallaGanadores(lista,ev);
   renderStep3();
@@ -3355,10 +3355,12 @@ function renderGanConf(){
   const allGans=S.ganadores.filter(g=>g.evId===evId);
   const preview=allGans.slice(0,3).map(g=>g.nombre.split(' ')[0]).join(', ')+(allGans.length>3?' y '+(allGans.length-3)+' más':'');
   const rows=gans.map((g,i)=>{
+    const canDel=g.estado!=="enviado";
     return `<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--line)">
       <div style="font-family:var(--fd);font-size:16px;color:var(--ice);opacity:.35;width:22px;text-align:center;line-height:1">${i+1}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${g.nombre}</div><div style="font-size:10px;color:var(--gray3)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
       <span class="bic ${g.estado==="enviado"?"bgi":"bai"}">${g.estado==="enviado"?"✓ Enviado":"Pendiente"}</span>
+      ${canDel?`<button class="btn br bsm" style="margin-left:4px" onclick="eliminarGanConfirmado('${g.id}')" title="Eliminar de la lista">✕</button>`:''}
     </div>`;
   }).join("");
   listEl.innerHTML=`<div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--bg2)">
@@ -3378,6 +3380,17 @@ function renderGanConf(){
   </div>`;
 }
 function toggleGanExp(id){if(_ganExp.has(id))_ganExp.delete(id);else _ganExp.add(id);renderGanConf();}
+function eliminarGanConfirmado(id){
+  const g=S.ganadores.find(x=>x.id===id);
+  if(!g)return;
+  if(!confirm("¿Eliminar a "+g.nombre+" de la lista de ganadores?\n\nEsto lo quita localmente. Si ya fue enviado a Sheets, eliminalo también desde allí."))return;
+  S.ganadores=S.ganadores.filter(x=>x.id!==id);
+  save();
+  renderGanConf();
+  renderStep3();
+  renderDash();
+  toast(g.nombre+" eliminado de ganadores");
+}
 function generarImagenWADesdeConf(){
   const evId=S.evActivo;
   const ev=S.eventos.find(e=>e.id===evId);

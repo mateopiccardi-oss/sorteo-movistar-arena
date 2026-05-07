@@ -2741,9 +2741,12 @@ function renderPart(q){
 // PASO 2: SORTEO
 function ganoPrevio(p,ev){
   if(!ev||ev.antiRep===false)return false;
-  // Check if person won in ANY date of the same show
   const showIds=S.eventos.filter(e=>e.show===ev.show).map(e=>e.id);
-  return S.ganadores.some(g=>g.email.toLowerCase()===p.email.toLowerCase()&&showIds.includes(g.evId));
+  return S.ganadores.some(g=>{
+    if(!showIds.includes(g.evId))return false;
+    if(g._historico)return g.nombre.trim().toUpperCase()===p.nombre.trim().toUpperCase();
+    return g.email.toLowerCase()===p.email.toLowerCase();
+  });
 }
 function renderStep2(){
   const ev=S.eventos.find(e=>e.id===S.evActivo);
@@ -3304,7 +3307,8 @@ function mostrarModalImagenWhatsApp(lista,ev){
   modal.addEventListener("click",function(e){if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
 
-  _generarCanvasWA(lista,ev).then(function(cv){
+  _generarCanvasWA(lista,ev).then(function(rendered){
+    cv.getContext("2d").drawImage(rendered,0,0);
     preview.src=cv.toDataURL("image/png");
     loadingEl.style.display="none";
     preview.style.display="block";

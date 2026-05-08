@@ -276,6 +276,25 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 .empty{text-align:center;padding:36px 20px;color:var(--gray3)}
 .empty-ic{font-size:22px;margin-bottom:7px;opacity:.2}
 .empty-txt{font-size:12px}
+/* ── IMPROVED EMPTY STATES ─────────────────────────────────── */
+.es{text-align:center;padding:42px 28px;border:1px solid rgba(255,255,255,0.07);border-radius:var(--r);background:linear-gradient(160deg,rgba(22,32,48,0.95) 0%,rgba(15,21,32,0.95) 100%);position:relative;overflow:hidden}
+.es::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ice),transparent);opacity:.15}
+.es-svg{margin:0 auto 16px;display:block}
+.es-title{font-family:var(--fd);font-size:19px;font-weight:700;letter-spacing:.5px;color:var(--white);margin-bottom:6px;text-transform:uppercase}
+.es-desc{font-size:12px;color:var(--gray3);margin-bottom:16px;line-height:1.6;max-width:260px;margin-left:auto;margin-right:auto}
+.es-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+/* ── ANTI-REP EXCLUIDOS ────────────────────────────────────── */
+.excl-list{margin-top:8px;display:none}
+.excl-list.open{display:block}
+.excl-toggle{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;opacity:.85;margin-top:5px;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,176,32,0.2);background:rgba(255,176,32,0.05);transition:all .15s;user-select:none}
+.excl-toggle:hover{opacity:1;background:rgba(255,176,32,0.1)}
+.excl-toggle svg{transition:transform .2s}
+.excl-toggle.open svg{transform:rotate(180deg)}
+.excl-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--rsm);border:1px solid rgba(255,176,32,0.12);background:rgba(255,176,32,0.03);margin-bottom:4px;animation:fadeUp .2s ease}
+.excl-item:last-child{margin-bottom:0}
+.excl-icon{width:24px;height:24px;border-radius:50%;background:rgba(255,176,32,0.1);border:1px solid rgba(255,176,32,0.25);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.excl-name{font-size:12px;font-weight:500;color:var(--white);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.excl-reason{font-size:10px;color:var(--amber);flex-shrink:0;white-space:nowrap;background:rgba(255,176,32,0.08);padding:2px 7px;border-radius:3px;border:1px solid rgba(255,176,32,0.18)}
 .csv-h{background:rgba(0,212,255,0.04);border-left:2px solid rgba(0,212,255,0.25);padding:9px 13px;font-size:11px;color:var(--gray2);line-height:1.9;margin-bottom:11px}
 .csv-h code{background:rgba(0,212,255,0.1);padding:1px 5px;color:var(--ice2);font-size:10px}
 
@@ -795,7 +814,28 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-3">
   <div class="ph"><div class="ph-eye">Paso 3</div><div class="ph-t">Ganadores</div><div class="ph-d">Revisá y confirmá antes de enviar</div></div>
 
-  <div id="gan-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">◈</div><div class="empty-txt">Realizá el sorteo primero</div><button class="btn bp bsm" style="margin-top:10px" onclick="goStep(2)">Ir al sorteo →</button></div>
+  <div id="gan-vacio" class="es">
+    <svg class="es-svg" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="28" cy="28" r="27" stroke="rgba(0,212,255,0.18)" stroke-width="1.5"/>
+      <rect x="16" y="16" width="10" height="10" rx="3" stroke="rgba(0,212,255,0.5)" stroke-width="1.5" fill="none"/>
+      <rect x="30" y="16" width="10" height="10" rx="3" stroke="rgba(0,212,255,0.3)" stroke-width="1.5" fill="none"/>
+      <rect x="16" y="30" width="10" height="10" rx="3" stroke="rgba(0,212,255,0.3)" stroke-width="1.5" fill="none"/>
+      <rect x="30" y="30" width="10" height="10" rx="3" stroke="rgba(0,212,255,0.5)" stroke-width="1.5" fill="none"/>
+      <circle cx="21" cy="21" r="1.5" fill="rgba(0,212,255,0.7)"/>
+      <circle cx="35" cy="19" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="33" cy="21" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="37" cy="21" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="18" cy="33" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="22" cy="37" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="22" cy="33" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="18" cy="37" r="1.2" fill="rgba(0,212,255,0.4)"/>
+      <circle cx="33" cy="35" r="1.5" fill="rgba(0,212,255,0.6)"/>
+      <circle cx="37" cy="35" r="1.5" fill="rgba(0,212,255,0.6)"/>
+    </svg>
+    <div class="es-title">Sin sorteo realizado</div>
+    <div class="es-desc">Volvé al paso anterior y realizá el sorteo para ver los ganadores acá.</div>
+    <div class="es-acts"><button class="btn bp bsm" onclick="goStep(2)">← Ir al sorteo</button></div>
+  </div>
   <div id="gan-panel" style="display:none">
     <!-- Contexto: show + quién recibe el mail -->
     <div id="gan-ctx" style="border:1px solid rgba(255,176,32,0.2);border-radius:var(--r);padding:12px 16px;margin-bottom:10px;background:rgba(255,176,32,0.04)">
@@ -842,7 +882,14 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     <button class="btn bo bsm" onclick="generarImagenWADesdeConf()" id="btn-wa-img" style="display:none;font-size:11px">📷 Imagen WhatsApp</button>
   </div>
   <div class="sbox"><input id="gan-search" placeholder="Buscar ganador…" oninput="renderGanConf()"></div>
-  <div id="gan-conf-empty" class="empty" style="display:none;border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">★</div><div class="empty-txt">Sin confirmados aún</div></div>
+  <div id="gan-conf-empty" class="es" style="display:none">
+    <svg class="es-svg" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="23" stroke="rgba(0,240,160,0.18)" stroke-width="1.5"/>
+      <path d="M15 24l7 7 11-14" stroke="rgba(0,240,160,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="es-title" style="color:var(--gray2)">Sin confirmados aún</div>
+    <div class="es-desc">Confirmá la lista de ganadores para que aparezcan acá.</div>
+  </div>
   <div id="gan-conf-list"></div>
 
   <div class="nav-btns">
@@ -855,7 +902,18 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="pg" id="pg-4">
   <div class="ph"><div class="ph-eye">Paso 4</div><div class="ph-t">Enviar mails</div><div class="ph-d">Personalizá el mail y enviá las entradas</div></div>
 
-  <div id="mail-vacio" class="empty" style="border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)"><div class="empty-ic">✉</div><div class="empty-txt">Confirmá los ganadores primero</div><button class="btn bp bsm" style="margin-top:10px" onclick="goStep(3)">Ir a ganadores →</button></div>
+  <div id="mail-vacio" class="es">
+    <svg class="es-svg" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="28" cy="28" r="27" stroke="rgba(0,212,255,0.18)" stroke-width="1.5"/>
+      <rect x="14" y="18" width="28" height="20" rx="3" stroke="rgba(0,212,255,0.4)" stroke-width="1.5" fill="none"/>
+      <path d="M14 21l14 11 14-11" stroke="rgba(0,212,255,0.35)" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="38" cy="18" r="5" fill="rgba(0,240,160,0.15)" stroke="rgba(0,240,160,0.5)" stroke-width="1.5"/>
+      <path d="M35.5 18l1.5 1.5 3-3" stroke="rgba(0,240,160,0.9)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="es-title">Sin ganadores confirmados</div>
+    <div class="es-desc">Primero confirmá la lista de ganadores en el paso anterior.</div>
+    <div class="es-acts"><button class="btn bp bsm" onclick="goStep(3)">← Ir a ganadores</button></div>
+  </div>
   <div id="mail-panel" style="display:none">
 
     <div style="padding:13px 16px;background:rgba(0,212,255,0.06);border:1px solid var(--ice-line);border-radius:var(--r);margin-bottom:10px">
@@ -1553,7 +1611,7 @@ function renderEvsByMonth(month){
   if(!cont)return;
   const evs=S.eventos.filter(e=>getMonthKey(e.fecha)===month).sort((a,b)=>b.fecha.localeCompare(a.fecha));
   if(!evs.length){
-    cont.innerHTML='<div class="empty" style="padding:24px"><div class="empty-txt">Sin eventos este mes</div></div>';
+    cont.innerHTML='<div class="empty" style="padding:28px;opacity:.7"><div class="empty-ic" style="font-size:16px">📅</div><div class="empty-txt">Sin eventos este mes</div></div>';
     return;
   }
   const shows=[...new Set(evs.map(e=>e.show))];
@@ -1733,6 +1791,13 @@ function toggleColl(id){
   var arrowId="arrow-"+id.replace("coll-","");
   var arrow=document.getElementById(arrowId);
   if(arrow)arrow.classList.toggle("open",!isOpen);
+}
+function toggleExclList(btn,listId){
+  var list=document.getElementById(listId);
+  if(!list)return;
+  var open=list.classList.toggle("open");
+  btn.classList.toggle("open",open);
+  btn.childNodes[0].textContent=open?"Ocultar ":"Ver quiénes ";
 }
 
 function toggleShow(show){
@@ -2475,8 +2540,18 @@ function renderDash(){
   // Events are rendered by renderMonthTabs()
   const cont=document.getElementById("dash-evs");
   if(!S.eventos.length){
-    cont.innerHTML='<div class="empty" style="padding:28px 0"><div class="empty-ic">◈</div><div class="empty-txt">No hay eventos todavía</div><button class="btn bp bsm" style="margin-top:12px" onclick="showModalNuevoEv()">+ Crear primer evento</button></div>';
-
+    cont.innerHTML=`<div class="es">
+      <svg class="es-svg" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="27" stroke="rgba(0,212,255,0.18)" stroke-width="1.5"/>
+        <rect x="14" y="17" width="28" height="24" rx="3" stroke="rgba(0,212,255,0.4)" stroke-width="1.5" fill="none"/>
+        <path d="M14 23h28" stroke="rgba(0,212,255,0.25)" stroke-width="1.5"/>
+        <path d="M21 13v8M35 13v8" stroke="rgba(0,212,255,0.35)" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M25 32h6M28 29v6" stroke="rgba(0,212,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="es-title">Sin eventos</div>
+      <div class="es-desc">Creá el primer evento para empezar a gestionar sorteos.</div>
+      <div class="es-acts"><button class="btn bp bsm" onclick="showModalNuevoEv()">+ Crear primer evento</button></div>
+    </div>`;
   }
 
 
@@ -2492,7 +2567,7 @@ function renderDash(){
   // Últimos sorteos — agrupados por evento
   (function(){
     const el=document.getElementById("dash-ult");
-    if(!S.ganadores.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-txt">Sin sorteos</div></div>';return;}
+    if(!S.ganadores.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-ic" style="font-size:16px">🎯</div><div class="empty-txt">Sin sorteos realizados aún</div></div>';return;}
 
     // Agrupar por evId
     const grupos={};
@@ -2731,7 +2806,7 @@ function renderPart(q){
   if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||p.email.toLowerCase().includes(q.toLowerCase()));
   document.getElementById("part-cnt").textContent=lista.length+" registros";
   const tb=document.getElementById("part-tb");
-  if(!lista.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray3);padding:20px">Sin inscriptos</td></tr>';return;}
+  if(!lista.length){tb.innerHTML='<tr><td colspan="6" style="padding:0"><div class="empty" style="padding:28px"><div class="empty-ic" style="font-size:16px">📋</div><div class="empty-txt">'+(S.evActivo?"Sin inscriptos en este evento · usá ↻ para sincronizar":"Sin evento activo")+'</div></div></td></tr>';return;}
   tb.innerHTML=lista.map((p,i)=>{
     const w=S.ganadores.filter(g=>g.email.toLowerCase()===p.email.toLowerCase()).length;
     return `<tr><td style="color:var(--gray3)">${i+1}</td><td style="font-weight:500">${p.nombre}</td><td style="color:var(--gray2)">${p.email}</td><td>${p.dni||"—"}</td><td style="color:var(--gray3);font-size:11px">${fd(p.fechaReg)}</td><td>${w>0?`<span class="bic bai">${w} 🏆</span>`:"—"}</td></tr>`;
@@ -2747,6 +2822,21 @@ function ganoPrevio(p,ev){
     if(g._historico)return g.nombre.trim().toUpperCase()===p.nombre.trim().toUpperCase();
     return g.email.toLowerCase()===p.email.toLowerCase();
   });
+}
+function ganoPrevioInfo(p,ev){
+  if(!ev||ev.antiRep===false)return null;
+  const showIds=S.eventos.filter(e=>e.show===ev.show).map(e=>e.id);
+  const match=S.ganadores.find(g=>{
+    if(!showIds.includes(g.evId))return false;
+    if(g._historico)return g.nombre.trim().toUpperCase()===p.nombre.trim().toUpperCase();
+    return g.email.toLowerCase()===p.email.toLowerCase();
+  });
+  if(!match)return null;
+  const evMatch=S.eventos.find(e=>e.id===match.evId);
+  return{
+    show:match.evNombre||evMatch?.nombre||ev.show||"mismo show",
+    fecha:evMatch?.fecha||match.fecha||null
+  };
 }
 function renderStep2(){
   const ev=S.eventos.find(e=>e.id===S.evActivo);
@@ -2773,13 +2863,22 @@ function renderStep2(){
   const alWrap=document.getElementById("sort-al");
   const alTxt=document.getElementById("sort-al-txt");
   alWrap.style.display="block";
+  const exclInfoS2=todos.filter(p=>ganoPrevio(p,ev)).map(p=>({p,info:ganoPrevioInfo(p,ev)}));
   if(!aptos.length){
     alTxt.className="al ad";
-    alTxt.innerHTML="Sin participantes aptos. "+bloq+" excluidos por la regla anti-repetición.";
+    const uid2="excls2-"+Date.now();
+    const items2=exclInfoS2.map(({p,info})=>{const r=info&&info.fecha?"Ganó el "+fd(info.fecha):info?.show||"mismo show";return`<div class="excl-item"><div class="excl-icon">🏆</div><div class="excl-name">${p.nombre}</div><div class="excl-reason">${r}</div></div>`;}).join("");
+    alTxt.innerHTML="Sin inscriptos habilitados. <strong>"+bloq+"</strong> excluido"+(bloq!==1?"s":"")+" por anti-repetición."+(items2?`<span class="excl-toggle" id="${uid2}" onclick="toggleExclList(this,'${uid2}-list')">Ver quiénes <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><div class="excl-list" id="${uid2}-list">${items2}</div>`:"");
     document.getElementById("btn-sort").disabled=true;
   } else {
     alTxt.className="al aii";
-    alTxt.innerHTML="<strong>"+aptos.length+"</strong> habilitados"+(bloq?" · <span style='color:var(--red)'>"+bloq+" excluidos por anti-repetición</span>":"");
+    if(bloq&&exclInfoS2.length){
+      const uid3="excls3-"+Date.now();
+      const items3=exclInfoS2.map(({p,info})=>{const r=info&&info.fecha?"Ganó el "+fd(info.fecha):info?.show||"mismo show";return`<div class="excl-item"><div class="excl-icon">🏆</div><div class="excl-name">${p.nombre}</div><div class="excl-reason">${r}</div></div>`;}).join("");
+      alTxt.innerHTML="<strong>"+aptos.length+"</strong> habilitados · <span style='color:var(--amber)'>"+bloq+" excluidos por anti-repetición</span> <span class=\"excl-toggle\" id=\""+uid3+"\" onclick=\"toggleExclList(this,'"+uid3+"-list')\">Ver quiénes <svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" fill=\"none\"><path d=\"M2 3.5l3 3 3-3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg></span><div class=\"excl-list\" id=\""+uid3+"-list\">"+items3+"</div>";
+    } else {
+      alTxt.innerHTML="<strong>"+aptos.length+"</strong> habilitados para el sorteo";
+    }
     document.getElementById("btn-sort").disabled=false;
   }
   if(S.sorteo.evId===S.evActivo&&S.sorteo.lista.length){
@@ -2914,11 +3013,20 @@ function renderStep3(){
     }).join("");
 
     const ev2=S.eventos.find(e=>e.id===evId);
-    const excl=S.participantes.filter(p=>p.evId===evId&&ganoPrevio(p,ev2));
+    const exclInfo=S.participantes.filter(p=>p.evId===evId).map(p=>({p,info:ganoPrevioInfo(p,ev2)})).filter(x=>x.info);
     const ganExcl=document.getElementById("gan-excl");
-    if(ev2?.antiRep!==false&&excl.length){
+    if(ev2?.antiRep!==false&&exclInfo.length){
       ganExcl.style.display="block";
-      document.getElementById("gan-excl-txt").innerHTML='<div class="al aw">'+excl.length+' persona(s) excluidas por haber ganado este show anteriormente (regla anti-repetición).</div>';
+      const uid="excl-"+Date.now();
+      const items=exclInfo.map(({p,info})=>{
+        const fechaStr=info.fecha?fd(info.fecha):"";
+        const razon=fechaStr?"Ganó el "+fechaStr:info.show;
+        return`<div class="excl-item"><div class="excl-icon">🏆</div><div class="excl-name">${p.nombre}</div><div class="excl-reason">${razon}</div></div>`;
+      }).join("");
+      document.getElementById("gan-excl-txt").innerHTML=
+        `<div class="al aw" style="margin-bottom:0"><strong>${exclInfo.length}</strong> inscripto${exclInfo.length!==1?"s":""} excluido${exclInfo.length!==1?"s":""} por anti-repetición `+
+        `<span class="excl-toggle" id="${uid}" onclick="toggleExclList(this,'${uid}-list')">Ver quiénes <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></div>`+
+        `<div class="excl-list" id="${uid}-list">${items}</div>`;
     } else ganExcl.style.display="none";
     renderRecomendaciones();
   } else {
@@ -3043,8 +3151,12 @@ function filtrarAgr(q){
   let disp=S.participantes.filter(p=>p.evId===evId&&!sel.includes(p.email));
   if(q)disp=disp.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||p.email.toLowerCase().includes(q.toLowerCase()));
   document.getElementById("agr-list").innerHTML=disp.length
-    ?disp.map(p=>`<div class="mli" data-pid="${p.id}" onclick="agregarGan(this.dataset.pid)"><div class="mli-n">${p.nombre}${ganoPrevio(p,ev)?' <span class="bic bri" style="font-size:9px">Ya ganó</span>':""}</div><div class="mli-e">${p.email}</div></div>`).join("")
-    :'<div style="text-align:center;color:var(--gray3);padding:18px">Sin resultados</div>';
+    ?disp.map(p=>{
+      const info=ganoPrevioInfo(p,ev);
+      const badge=info?`<span class="bic bri" style="font-size:9px" title="${info.fecha?'Ganó el '+fd(info.fecha):info.show}">Ya ganó 🏆</span>`:"";
+      return`<div class="mli" data-pid="${p.id}" onclick="agregarGan(this.dataset.pid)"><div class="mli-n">${p.nombre} ${badge}</div><div class="mli-e">${p.email}</div></div>`;
+    }).join("")
+    :'<div style="text-align:center;color:var(--gray3);padding:18px">Sin participantes disponibles</div>';
 }
 function agregarGan(pid){
   const p=S.participantes.find(x=>String(x.id)===String(pid));
@@ -3722,7 +3834,10 @@ function renderHist() {
   var tb = document.getElementById("hist-tb");
   if (!tb) return;
   if (!paginated.length) {
-    tb.innerHTML = "<tr><td colspan='6' style='text-align:center;color:var(--gray3);padding:24px'>Sin resultados</td></tr>";
+    var isFiltered=(document.getElementById("hist-q")&&document.getElementById("hist-q").value)||(document.getElementById("hist-fil-show")&&document.getElementById("hist-fil-show").value)||(document.getElementById("hist-fil-est")&&document.getElementById("hist-fil-est").value);
+    tb.innerHTML = isFiltered
+      ? "<tr><td colspan='6' style='text-align:center;color:var(--gray3);padding:28px'>Sin resultados para esta búsqueda</td></tr>"
+      : "<tr><td colspan='6' style='padding:0'><div class='es' style='border:none;border-radius:0'><svg class='es-svg' width='48' height='48' viewBox='0 0 48 48' fill='none'><circle cx='24' cy='24' r='23' stroke='rgba(0,212,255,0.18)' stroke-width='1.5'/><rect x='12' y='10' width='24' height='28' rx='3' stroke='rgba(0,212,255,0.35)' stroke-width='1.5' fill='none'/><path d='M18 18h12M18 23h12M18 28h8' stroke='rgba(0,212,255,0.3)' stroke-width='1.2' stroke-linecap='round'/></svg><div class='es-title'>Sin ganadores registrados</div><div class='es-desc'>Los ganadores aparecerán acá después de confirmar un sorteo.</div></div></td></tr>";
     return;
   }
   tb.innerHTML = paginated.map(function(g, i) {

@@ -1383,6 +1383,9 @@ function crearEvento(){
   S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
   S.evActivo=id;
   save();
+  // Sincronizar con la nube en background
+  const _evCreado=S.eventos.find(e=>e.id===id);
+  if(_evCreado) api({action:"upsertShow",show:_evCreado}).catch(()=>{});
   closeModal("modal-ev");
   toast("Evento creado — iniciando wizard");
   updateTopbar();
@@ -1427,6 +1430,8 @@ function guardarEvento(){
   const closeAt=document.getElementById("edit-closeat").value;
   S.schedules[slug2]=closeAt;
   save();
+  // Sincronizar evento actualizado con la nube en background
+  api({action:"upsertShow",show:ev}).catch(()=>{});
   api({action:"setShowSchedule",showId:slug2,closeAt:closeAt}).catch(()=>{});
   closeModal("modal-edit");
   toast("Evento actualizado");
@@ -1444,10 +1449,13 @@ function eliminarEvento(){
   if(S.sorteo.evId===id) S.sorteo={evId:null,lista:[]};
   if(S.evActivo===id){S.evActivo=null;}
   save();
+  // Soft-delete en la nube en background
+  api({action:"deleteShow",id:id}).catch(()=>{});
   closeModal("modal-edit");
   toast("Evento eliminado");
   updateTopbar();
   viewDash();
+}
 }
 // ── FORM LINK ─────────────────────────────────────────────
 function abrirConfigForm(){
@@ -3680,11 +3688,42 @@ async function checkPin(){
     setTimeout(()=>{inp.classList.remove("err");document.getElementById("pin-error").textContent="";},1400);
   }
 }
+// ── SYNC SHOWS DESDE LA NUBE ──────────────────────────────
+async function syncShowsFromCloud(){
+  try{
+    const res=await api({action:"getShowsCloud"});
+    if(!res.ok||!Array.isArray(res.shows))return;
+    const cloudIds=new Set(res.shows.map(s=>s.id));
+    // Subir shows locales que aún no están en la nube
+    for(const ev of S.eventos){
+      if(!cloudIds.has(ev.id)){
+        api({action:"upsertShow",show:ev}).catch(()=>{});
+      }
+    }
+    if(!res.shows.length)return; // No sobreescribir locales si la nube está vacía
+    // Merge: la nube tiene prioridad, pero conservar ganadores/sorteo locales
+    S.eventos=res.shows;
+    S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    // Validar que evActivo aún existe
+    if(S.evActivo&&!S.eventos.find(e=>e.id===S.evActivo)){
+      S.evActivo=S.eventos.length?S.eventos[0].id:null;
+    }
+    save();
+    renderDash();
+    updateTopbar();
+    console.log("syncShowsFromCloud: "+res.shows.length+" shows sincronizados.");
+  }catch(e){
+    console.warn("syncShowsFromCloud error:",e);
+  }
+}
 function startApp(){
   load();
   renderDash();
   updateTopbar();
-  setTimeout(function(){importarDesdeTracking(true);},1000);
+  // Cargar shows desde la nube (~1s de delay para no bloquear render inicial)
+  setTimeout(function(){syncShowsFromCloud();},800);
+  // Cargar tracking de ganadores (~1.5s)
+  setTimeout(function(){importarDesdeTracking(true);},1500);
 }
 // INIT
 if(sessionStorage.getItem("ma_auth")==="1"){

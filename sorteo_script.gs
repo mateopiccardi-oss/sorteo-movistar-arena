@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  SORTEO MOVISTAR ARENA — Apps Script completo
 //  
 //  CONFIGURACIÓN INICIAL:
@@ -72,6 +72,9 @@ function doPost(e) {
       case "setShowActivo":          return resp(setShowActivo(body.showId, body.activo));
       case "checkShowActivo":        return resp(checkShowActivo(body.showId));
       case "setShowSchedule":        return resp(setShowSchedule(body.showId, body.closeAt));
+      case "getShowsCloud":          return resp(getShowsCloud());
+      case "upsertShow":             return resp(upsertShow(body.show));
+      case "deleteShow":             return resp(deleteShow(body.id));
       default:                  return resp({ ok: false, error: "Acción desconocida: " + action });
     }
   } catch (err) {
@@ -898,6 +901,120 @@ function testDrive() {
 }
 
 // DEBUG: ejecutar manualmente para probar envío con PDF
+// ============================================================
+//  SHOWS CLOUD — fuente de verdad en hoja "Shows"
+//  Columnas: A=ID, B=Show, C=Nombre, D=Fecha, E=Hora,
+//            F=Venue, G=Cantidad, H=EntradasXGan, I=FormUrl,
+//            J=AntiRep, K=CreadoEn, L=ActualizadoEn, M=Eliminado
+// ============================================================
+function _ensureShowsSheet() {
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  let hoja = ss.getSheetByName("Shows");
+  if (!hoja) {
+    hoja = ss.insertSheet("Shows");
+    const headers = ["ID","Show","Nombre","Fecha","Hora","Venue","Cantidad","EntradasXGan","FormUrl","AntiRep","CreadoEn","ActualizadoEn","Eliminado"];
+    hoja.appendRow(headers);
+    hoja.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#0D1220").setFontColor("#00D4FF");
+    hoja.setFrozenRows(1);
+    Logger.log("Hoja 'Shows' creada.");
+  }
+  return hoja;
+}
+
+function getShowsCloud() {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+    const hoja = ss.getSheetByName("Shows");
+    if (!hoja) return { ok: true, shows: [] };
+    const datos = hoja.getDataRange().getValues();
+    const shows = [];
+    for (let i = 1; i < datos.length; i++) {
+      if (String(datos[i][12]).trim() === "1") continue; // eliminado
+      const id = String(datos[i][0]).trim();
+      if (!id) continue;
+      shows.push({
+        id:           id,
+        show:         String(datos[i][1] || "").trim(),
+        nombre:       String(datos[i][2] || "").trim(),
+        fecha:        String(datos[i][3] || "").trim(),
+        hora:         String(datos[i][4] || "").trim(),
+        venue:        String(datos[i][5] || "").trim(),
+        cantidad:     parseInt(datos[i][6]) || 2,
+        entradasXGan: parseInt(datos[i][7]) || 1,
+        formUrl:      String(datos[i][8] || "").trim(),
+        antiRep:      String(datos[i][9]).trim() !== "0",
+        creadoEn:     String(datos[i][10] || "").trim(),
+      });
+    }
+    Logger.log("getShowsCloud: " + shows.length + " shows devueltos.");
+    return { ok: true, shows };
+  } catch(e) {
+    Logger.log("Error en getShowsCloud: " + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+function upsertShow(show) {
+  try {
+    if (!show || !show.id) return { ok: false, error: "show.id requerido" };
+    const hoja = _ensureShowsSheet();
+    const datos = hoja.getDataRange().getValues();
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+    const row = [
+      String(show.id),
+      String(show.show || ""),
+      String(show.nombre || ""),
+      String(show.fecha || ""),
+      String(show.hora || ""),
+      String(show.venue || ""),
+      parseInt(show.cantidad) || 2,
+      parseInt(show.entradasXGan) || 1,
+      String(show.formUrl || ""),
+      show.antiRep !== false ? "1" : "0",
+      String(show.creadoEn || now),
+      now,
+      "0"
+    ];
+    // Buscar si ya existe
+    for (let i = 1; i < datos.length; i++) {
+      if (String(datos[i][0]).trim() === String(show.id).trim()) {
+        // Conservar creadoEn original
+        row[10] = String(datos[i][10] || now);
+        hoja.getRange(i + 1, 1, 1, 13).setValues([row]);
+        Logger.log("upsertShow (actualizado): " + show.id);
+        return { ok: true, accion: "actualizado" };
+      }
+    }
+    hoja.appendRow(row);
+    Logger.log("upsertShow (creado): " + show.id);
+    return { ok: true, accion: "creado" };
+  } catch(e) {
+    Logger.log("Error en upsertShow: " + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+function deleteShow(id) {
+  try {
+    if (!id) return { ok: false, error: "id requerido" };
+    const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+    const hoja = ss.getSheetByName("Shows");
+    if (!hoja) return { ok: false, error: "Hoja Shows no existe" };
+    const datos = hoja.getDataRange().getValues();
+    for (let i = 1; i < datos.length; i++) {
+      if (String(datos[i][0]).trim() === String(id).trim()) {
+        hoja.getRange(i + 1, 13).setValue("1"); // Eliminado
+        Logger.log("deleteShow (soft-delete): " + id);
+        return { ok: true };
+      }
+    }
+    return { ok: false, error: "Show no encontrado: " + id };
+  } catch(e) {
+    Logger.log("Error en deleteShow: " + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
 function debugEnviarUno() {
   var ui = SpreadsheetApp.getUi();
 

@@ -1,2 +1,4 @@
 [build]
-ignore = "git diff --quiet HEAD^ HEAD -- formulario_inscripcion.html"
+# Deploy solo si cambiaron archivos del formulario/frontend.
+# Cambios en sorteo_script.gs u otros archivos NO disparan redeploy.
+ignore = "git diff --quiet HEAD^ HEAD -- index.html formulario_inscripcion.html s/ _redirects"

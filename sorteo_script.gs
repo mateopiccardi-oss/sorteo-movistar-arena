@@ -928,6 +928,18 @@ function getShowsCloud() {
     if (!hoja) return { ok: true, shows: [] };
     const datos = hoja.getDataRange().getValues();
     const shows = [];
+    
+    // Función auxiliar para forzar el formato YYYY-MM-DD si Sheets lo convirtió a Date
+    const formatFecha = (val) => {
+      if (Object.prototype.toString.call(val) === "[object Date]") {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, "0");
+        const d = String(val.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+      return String(val || "").trim();
+    };
+
     for (let i = 1; i < datos.length; i++) {
       if (String(datos[i][12]).trim() === "1") continue; // eliminado
       const id = String(datos[i][0]).trim();
@@ -936,7 +948,7 @@ function getShowsCloud() {
         id:           id,
         show:         String(datos[i][1] || "").trim(),
         nombre:       String(datos[i][2] || "").trim(),
-        fecha:        String(datos[i][3] || "").trim(),
+        fecha:        formatFecha(datos[i][3]),
         hora:         String(datos[i][4] || "").trim(),
         venue:        String(datos[i][5] || "").trim(),
         cantidad:     parseInt(datos[i][6]) || 2,

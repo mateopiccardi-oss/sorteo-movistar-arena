@@ -2321,8 +2321,10 @@ async function importarDesdeTracking(silente){
       return;
     }
 
-    // Preserve local events/ganadores, rebuild only tracking-sourced ones
-    S.ganadores=S.ganadores.filter(function(g){return !g._historico;});
+    // Rebuild ganadores entirely from Sheets. Non-historico local ganadores are safe to
+    // discard because confirmarGanadores() marks them _historico right after a successful
+    // Sheets sync; any that remain non-historico are stale/garbage data.
+    S.ganadores=[];
     S.eventos=S.eventos.filter(function(e){return !e._fromTracking;});
 
     let totalGan=0;

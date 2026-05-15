@@ -504,7 +504,7 @@ function syncGanadores(ganadores) {
   }
 }
 
-function trackingGanadores(ganadores, showNombre, fecha) {
+function trackingGanadores(ganadores, showNombre, fecha, entradasXGan) {
   try {
     if (!ganadores || !ganadores.length) return { ok: true, mensaje: "Sin ganadores para agregar" };
 
@@ -577,8 +577,19 @@ function trackingGanadores(ganadores, showNombre, fecha) {
     var names = ganadores.map(function(g) { return [(g.nombre || g.mail).toUpperCase()]; });
     hoja.getRange(firstEmpty, col, names.length, 1).setValues(names);
 
-    Logger.log("trackingGanadores: " + ganadores.length + " agregados en col " + col + " fila " + firstEmpty);
-    return { ok: true, mensaje: ganadores.length + " ganadores agregados en " + showNombre + " (columna C)" };
+    // Auto-increment B123 (ticketsBase) so the app stays in sync without manual updates
+    var n = parseInt(entradasXGan) || 1;
+    var ticketsAdded = ganadores.length * n;
+    try {
+      var valB123 = hoja.getRange("B123").getValue();
+      var currentBase = (valB123 && !isNaN(Number(valB123))) ? parseInt(valB123) : 0;
+      hoja.getRange("B123").setValue(currentBase + ticketsAdded);
+    } catch(e2) {
+      Logger.log("Error actualizando B123: " + e2.message);
+    }
+
+    Logger.log("trackingGanadores: " + ganadores.length + " agregados en col " + col + " fila " + firstEmpty + ", B123 +=" + ticketsAdded);
+    return { ok: true, ticketsAdded: ticketsAdded, mensaje: ganadores.length + " ganadores agregados en " + showNombre + " (columna C)" };
   } catch(e) {
     Logger.log("Error en trackingGanadores: " + e.message);
     return { ok: false, error: "Error: " + e.message };

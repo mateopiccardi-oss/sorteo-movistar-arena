@@ -3204,6 +3204,16 @@ async function confirmarGanadores(){
     toast("⚠ Error al sincronizar Sheets: "+errores[0],"warn");
     console.error("Sheets sync errors:",errores);
   } else {
+    // Tracking guardado: marcar ganadores como _historico y sumar a ticketsBase
+    // para que drawTickets() no los cuente doble respecto a B123
+    const n=ev.entradasXGan||1;
+    lista.forEach(g=>{
+      const localG=S.ganadores.find(x=>x.evId===evId&&x.nombre===g.nombre&&!x._historico);
+      if(localG)localG._historico=true;
+    });
+    S.ticketsBase=(S.ticketsBase||0)+lista.length*n;
+    save();
+    renderDash();
     toast("✓ Sheets sincronizado correctamente");
   }
 }
@@ -3454,7 +3464,8 @@ async function trackingEnSheets(lista,ev){
     action:"trackingGanadores",
     ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email})),
     showNombre:ev.show||ev.nombre,
-    fecha:fmtCorta(ev.fecha)
+    fecha:fmtCorta(ev.fecha),
+    entradasXGan:ev.entradasXGan||1
   });
   if(!res.ok)throw new Error(res.error||"Error en trackingGanadores");
   return res;

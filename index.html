@@ -3666,7 +3666,25 @@ async function enviarGmail(){
   const pend=S.ganadores.filter(g=>g.evId===evId&&g.estado==="pendiente");
   if(!pend.length){toast("No hay pendientes","warn");return;}
   const nombreCarpeta=ev?.nombre||evId;
-  if(!confirm("¿Enviar mails a "+pend.length+" ganador(es) de \""+nombreCarpeta+"\"?\n\nLos PDFs deben estar en Drive:\nSorteo Movistar Arena / Entradas / "+nombreCarpeta+"/"))return;
+  const btn=document.getElementById("btn-gmail");
+  btn.disabled=true;btn.textContent="🔎 Verificando PDFs en Drive…";
+  const check=await api({
+    action:"checkPDFs",
+    showId:String(nombreCarpeta),
+    showNombre:nombreCarpeta,
+    entradasXGan:ev?.entradasXGan||1,
+    pendCount:pend.length
+  });
+  btn.disabled=false;btn.textContent="Enviar via Gmail";
+  if(!check.ok){toast("Error verificando PDFs: "+(check.error||""),"warn");return;}
+  if(check.status!=="ok"){
+    mostrarPreflightPDFs(check,pend,ev,nombreCarpeta);
+    return;
+  }
+  if(!confirm("✓ Verificado: "+check.found+" PDF(s) en Drive (necesarios: "+check.expected+").\n\n¿Enviar mails a "+pend.length+" ganador(es) de \""+nombreCarpeta+"\"?"))return;
+  await _enviarMailsCore(nombreCarpeta,ev,pend);
+}
+async function _enviarMailsCore(nombreCarpeta,ev,pend){
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="⏳ Enviando…";
   const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
@@ -3675,6 +3693,56 @@ async function enviarGmail(){
   pend.forEach(g=>{g.estado="enviado";});
   save();toast(res.mensaje||pend.length+" mails enviados");renderMails();renderDash();
   if(res.errores?.length)setTimeout(()=>alert("Errores:\n"+res.errores.join("\n")),500);
+}
+function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
+  const existing=document.getElementById("preflight-modal");
+  if(existing)existing.remove();
+  const blocker=(check.status==="no-root"||check.status==="no-entradas");
+  let titulo,detalle,color="var(--amber)";
+  if(check.status==="no-root"){
+    titulo="Falta la carpeta raíz en Drive";
+    detalle="No encontré la carpeta <strong>'Sorteo Movistar Arena'</strong> en tu Drive.<br>Creala (o verificá tus permisos) y volvé a intentar.";
+    color="var(--red)";
+  } else if(check.status==="no-entradas"){
+    titulo="Falta la subcarpeta 'Entradas'";
+    detalle="Dentro de <strong>'Sorteo Movistar Arena'</strong> no existe la subcarpeta <strong>'Entradas'</strong>.<br>Creala y volvé a intentar.";
+    color="var(--red)";
+  } else if(check.status==="no-show-folder"){
+    titulo="No se encontró la carpeta del show";
+    let avail="";
+    if(check.availableFolders&&check.availableFolders.length){
+      const items=check.availableFolders.slice(0,15).map(esc).join(", ");
+      avail='<div style="margin-top:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:var(--rsm);font-size:11px;color:var(--gray2)"><div style="font-size:10px;color:var(--gray3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px">Carpetas disponibles en Drive/Entradas</div>'+items+(check.availableFolders.length>15?", …":"")+"</div>";
+    }
+    detalle="Buscando <strong>"+esc(check.buscado||nombreCarpeta)+"</strong> en Drive/Entradas pero no apareció.<br>Renombrala para que coincida exactamente, o creala si no existe."+avail;
+    color="var(--red)";
+  } else if(check.status==="insufficient"){
+    titulo="PDFs insuficientes";
+    detalle="Necesitás <strong>"+check.expected+"</strong> PDFs ("+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" × "+check.entradasXGan+" entrada"+(check.entradasXGan!==1?"s":"")+") pero hay solo <strong>"+check.found+"</strong> en la carpeta <em>'"+esc(check.folderName||"")+"'</em>.<br>Podés subir más PDFs y reintentar, o enviar igual (los últimos ganadores se quedarán sin adjunto).";
+  }
+  const acciones=blocker
+    ? '<button class="btn bo" onclick="document.getElementById(\'preflight-modal\').remove()">Cerrar</button>'
+    : '<button class="btn bo" onclick="document.getElementById(\'preflight-modal\').remove()">Cancelar</button><button class="btn br" id="btn-pf-force">Enviar igual</button>';
+  const modal=document.createElement("div");
+  modal.id="preflight-modal";
+  modal.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:rgba(9,14,26,0.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)";
+  modal.innerHTML=`
+    <div style="width:100%;max-width:520px;padding:24px 22px;background:linear-gradient(180deg,rgba(22,32,48,0.96),rgba(13,18,32,0.96));border:1px solid ${color};border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,0.5)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${color};opacity:.18;font-size:18px">⚠</div>
+        <div style="font-size:15px;font-weight:700;color:var(--white);font-family:var(--fb)">${titulo}</div>
+      </div>
+      <div style="font-size:13px;color:var(--gray2);line-height:1.55;margin-bottom:18px">${detalle}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">${acciones}</div>
+    </div>`;
+  modal.addEventListener("click",e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  if(!blocker){
+    document.getElementById("btn-pf-force").addEventListener("click",async()=>{
+      modal.remove();
+      await _enviarMailsCore(nombreCarpeta,ev,pend);
+    });
+  }
 }
 function toggleEnv(id){
   const g=S.ganadores.find(x=>String(x.id)===String(id));

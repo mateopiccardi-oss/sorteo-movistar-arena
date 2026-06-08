@@ -70,6 +70,7 @@ function doPost(e) {
       case "getInscriptos":     return resp(getInscriptos(body.showId));
       case "guardarGanadores":  return resp(guardarGanadores(body.ganadores, body.showId, body.showNombre, body.fecha, body.venue));
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
+      case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
       case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha));
       case "leerTracking":           return resp(leerTracking());
@@ -377,6 +378,93 @@ function getShows() {
   }
 
   return { ok: true, shows: Object.values(map) };
+}
+
+// ============================================================
+//  CHECK PDFs — pre-flight diagnostico antes de enviar mails
+//  Devuelve estado detallado:
+//   - status: "ok" | "insufficient" | "no-show-folder" | "no-entradas" | "no-root"
+//   - found, expected, pdfNames, folderName, availableFolders
+// ============================================================
+function checkPDFs(showId, showNombre, entradasXGan, pendCount) {
+  if (!showId) return { ok: false, error: "Show ID requerido" };
+
+  var epg = parseInt(entradasXGan) || 1;
+  var pc = parseInt(pendCount) || 0;
+  var expected = pc * epg;
+  var buscar = showNombre || showId;
+
+  try {
+    var raizIter = DriveApp.getFoldersByName("Sorteo Movistar Arena");
+    if (!raizIter.hasNext()) {
+      return { ok: true, status: "no-root", expected: expected, found: 0, buscado: buscar };
+    }
+    var raiz = raizIter.next();
+
+    var entradasIter = raiz.getFoldersByName("Entradas");
+    if (!entradasIter.hasNext()) {
+      return { ok: true, status: "no-entradas", expected: expected, found: 0, buscado: buscar };
+    }
+    var entradas = entradasIter.next();
+
+    // Buscar carpeta del show (mismo orden que buscarPDFs)
+    var carpetaShow = null;
+    if (showNombre) {
+      var m1 = entradas.getFoldersByName(showNombre);
+      if (m1.hasNext()) carpetaShow = m1.next();
+    }
+    if (!carpetaShow) {
+      var m2 = entradas.getFoldersByName(String(showId));
+      if (m2.hasNext()) carpetaShow = m2.next();
+    }
+    if (!carpetaShow) {
+      var target = (showNombre || showId).toString().toLowerCase().trim();
+      var m3 = entradas.getFolders();
+      while (m3.hasNext()) {
+        var f = m3.next();
+        if (f.getName().toLowerCase().trim() === target) { carpetaShow = f; break; }
+      }
+    }
+
+    if (!carpetaShow) {
+      var subIter = entradas.getFolders();
+      var availables = [];
+      while (subIter.hasNext()) availables.push(subIter.next().getName());
+      availables.sort();
+      return {
+        ok: true,
+        status: "no-show-folder",
+        expected: expected,
+        found: 0,
+        buscado: buscar,
+        availableFolders: availables.slice(0, 30)
+      };
+    }
+
+    var archivos = carpetaShow.getFiles();
+    var pdfs = [];
+    while (archivos.hasNext()) {
+      var fi = archivos.next();
+      var mime = fi.getMimeType();
+      if (mime === MimeType.PDF || mime === "application/pdf") {
+        pdfs.push(fi.getName());
+      }
+    }
+    pdfs.sort();
+
+    return {
+      ok: true,
+      status: pdfs.length >= expected ? "ok" : "insufficient",
+      expected: expected,
+      found: pdfs.length,
+      pendCount: pc,
+      entradasXGan: epg,
+      folderName: carpetaShow.getName(),
+      pdfNames: pdfs.slice(0, 20)
+    };
+  } catch (e) {
+    return { ok: false, error: "Error en checkPDFs: " + e.message };
+  }
 }
 
 // ============================================================

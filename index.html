@@ -2483,17 +2483,31 @@ function renderTasa(){
 function renderLeaderboard(){
   var el=document.getElementById("leaderboard-list");
   if(!el)return;
-  if(!S.ganadores.length){
+  var _excluir=/^(total|tickets|cuenta\s*tickets?|subtotal|suma)$/i;
+  var lista=[];
+  // Fuente autoritativa: S.colaboradores (col A/B del Tracking con formulas)
+  if(S.colaboradores&&S.colaboradores.length){
+    lista=S.colaboradores
+      .filter(function(c){return c.nombre&&!_excluir.test(c.nombre.trim());})
+      .map(function(c){return {nombre:c.nombre,wins:c.victorias||0};})
+      .filter(function(p){return p.wins>0;});
+  }
+  // Fallback: contar desde S.ganadores si no hay colaboradores cargados
+  if(!lista.length&&S.ganadores.length){
+    var map={};
+    S.ganadores.forEach(function(g){
+      var k=(g.email||g.nombre||"").toLowerCase();
+      if(!k)return;
+      if(!map[k])map[k]={nombre:g.nombre,wins:0};
+      map[k].wins++;
+    });
+    lista=Object.values(map);
+  }
+  if(!lista.length){
     el.innerHTML="<div class='empty' style='padding:20px 0'><div class='empty-txt'>Sin datos</div></div>";
     return;
   }
-  var map={};
-  S.ganadores.forEach(function(g){
-    var k=g.email.toLowerCase();
-    if(!map[k])map[k]={nombre:g.nombre,wins:0};
-    map[k].wins++;
-  });
-  var lista=Object.values(map).sort(function(a,b){return b.wins-a.wins;}).slice(0,8);
+  lista=lista.sort(function(a,b){return b.wins-a.wins;}).slice(0,8);
   var maxWins=lista[0]?lista[0].wins:1;
   var colors=["var(--amber)","var(--gray2)","rgba(205,127,50,0.9)"];
   el.innerHTML=lista.map(function(p,i){

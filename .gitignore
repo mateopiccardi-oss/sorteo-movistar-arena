@@ -9,3 +9,7 @@
 
 # Carpetas auxiliares locales
 files/
+
+# Logos fuente (solo se usan para regenerar favicon)
+-02-vertical*.png
+_make_favicon.ps1

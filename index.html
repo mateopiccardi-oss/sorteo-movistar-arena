@@ -953,6 +953,14 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <div style="font-size:10px;color:var(--gray3);display:flex;align-items:center;gap:5px;margin-top:6px"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>Preview en tiempo real</div>
     </div>
 
+    <div style="padding:16px 18px;border:1px solid rgba(0,240,160,0.32);border-radius:var(--r);background:linear-gradient(135deg,rgba(0,240,160,0.10),rgba(0,240,160,0.02));margin-bottom:12px;box-shadow:0 0 32px rgba(0,240,160,0.07)" id="mail-send-banner">
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--white)">Enviar entradas a los ganadores pendientes</div>
+        <div style="font-size:10px;color:var(--gray3);margin-top:3px">Adjunta los PDFs desde Drive y envía desde <span style="color:var(--green)">rrhh@buenosairesarena.com</span></div>
+      </div>
+      <button class="btn bg_" id="btn-gmail" onclick="enviarGmail()" style="width:100%;padding:14px 22px;font-size:14px;font-weight:700;letter-spacing:.5px;background:linear-gradient(135deg,rgba(0,240,160,0.22),rgba(0,240,160,0.12));border:1px solid rgba(0,240,160,0.45);color:var(--green);box-shadow:0 0 28px rgba(0,240,160,0.22)">Enviar via Gmail</button>
+    </div>
+
     <div class="card">
       <div class="fb" style="margin-bottom:10px">
         <div><div class="ct" style="margin:0" id="mail-ct">Ganadores</div><div style="font-size:10px;color:var(--gray3);margin-top:2px" id="mail-cnt"></div></div>
@@ -960,18 +968,10 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
           <button class="btn bo bsm" onclick="selTodos(true)">Todos</button>
           <button class="btn bo bsm" onclick="selTodos(false)">Ninguno</button>
           <button class="btn ba bsm" onclick="marcarMasivo()">✉ Marcar enviados</button>
-          <button class="btn br bsm" onclick="desmarcarTodos()">↩ Desmarcar todos</button>
+          <button class="btn br bsm" onclick="desmarcarMasivo()">↩ Desmarcar enviados</button>
         </div>
       </div>
       <div id="mail-list"></div>
-    </div>
-
-    <div style="padding:16px 18px;border:1px solid rgba(0,240,160,0.32);border-radius:var(--r);background:linear-gradient(135deg,rgba(0,240,160,0.10),rgba(0,240,160,0.02));margin-top:12px;box-shadow:0 0 32px rgba(0,240,160,0.07)" id="mail-send-banner">
-      <div style="margin-bottom:12px">
-        <div style="font-size:13px;font-weight:700;color:var(--white)">Enviar entradas a los ganadores pendientes</div>
-        <div style="font-size:10px;color:var(--gray3);margin-top:3px">Adjunta los PDFs desde Drive y envía desde <span style="color:var(--green)">rrhh@buenosairesarena.com</span></div>
-      </div>
-      <button class="btn bg_" id="btn-gmail" onclick="enviarGmail()" style="width:100%;padding:14px 22px;font-size:14px;font-weight:700;letter-spacing:.5px;background:linear-gradient(135deg,rgba(0,240,160,0.22),rgba(0,240,160,0.12));border:1px solid rgba(0,240,160,0.45);color:var(--green);box-shadow:0 0 28px rgba(0,240,160,0.22)">⚡ Enviar via Gmail</button>
     </div>
   </div>
 
@@ -3631,11 +3631,13 @@ function toggleChk(id){
   if(_chk.has(sid))_chk.delete(sid);else _chk.add(sid);
   const el=document.getElementById("chk-"+sid);
   if(!el)return;
-  const g=S.ganadores.find(x=>String(x.id)===sid);
-  if(g&&g.estado!=="enviado"){const on=_chk.has(sid);el.style.background=on?"var(--ice)":"transparent";el.style.borderColor=on?"var(--ice)":"var(--line2)";el.textContent=on?"✓":"";}
+  const on=_chk.has(sid);
+  el.style.background=on?"var(--ice)":"transparent";
+  el.style.borderColor=on?"var(--ice)":"var(--line2)";
+  el.textContent=on?"✓":"";
 }
 function selTodos(sel){
-  S.ganadores.filter(g=>g.evId===S.evActivo&&g.estado==="pendiente").forEach(g=>{
+  S.ganadores.filter(g=>g.evId===S.evActivo).forEach(g=>{
     const sid=String(g.id);
     if(sel)_chk.add(sid);else _chk.delete(sid);
     const el=document.getElementById("chk-"+sid);
@@ -3650,15 +3652,13 @@ function marcarMasivo(){
   sel.forEach(id=>{const g=S.ganadores.find(x=>String(x.id)===id);if(g){g.estado="enviado";_chk.delete(id);}});
   save();toast(sel.length+" marcado(s)");renderMails();renderDash();
 }
-function desmarcarTodos(){
-  const evId=S.evActivo;
-  if(!evId){toast("Sin evento activo","warn");return;}
-  const gans=S.ganadores.filter(g=>g.evId===evId&&g.estado==="enviado");
-  if(!gans.length){toast("Todos ya están como pendientes","warn");return;}
-  const ev=S.eventos.find(e=>e.id===evId);
-  if(!confirm("¿Desmarcar "+gans.length+" ganador(es) como pendientes para \""+ev?.nombre+"\"?"))return;
-  gans.forEach(g=>{g.estado="pendiente";});
-  save();toast(gans.length+" desmarcado(s) como pendientes");renderMails();renderDash();
+function desmarcarMasivo(){
+  const sel=[..._chk].filter(id=>{const g=S.ganadores.find(x=>String(x.id)===id);return g&&g.estado==="enviado";});
+  if(!sel.length){toast("Seleccioná ganadores enviados para desmarcar","warn");return;}
+  const ev=S.eventos.find(e=>e.id===S.evActivo);
+  if(!confirm("¿Desmarcar "+sel.length+" ganador(es) como pendientes para \""+ev?.nombre+"\"?\n\nVas a poder reenviarles el mail."))return;
+  sel.forEach(id=>{const g=S.ganadores.find(x=>String(x.id)===id);if(g){g.estado="pendiente";_chk.delete(id);}});
+  save();toast(sel.length+" desmarcado(s) como pendientes");renderMails();renderDash();
 }
 async function enviarGmail(){
   const evId=S.evActivo;
@@ -3670,7 +3670,7 @@ async function enviarGmail(){
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="⏳ Enviando…";
   const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
-  btn.disabled=false;btn.textContent="⚡ Enviar via Gmail";
+  btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
   pend.forEach(g=>{g.estado="enviado";});
   save();toast(res.mensaje||pend.length+" mails enviados");renderMails();renderDash();

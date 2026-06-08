@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sorteo — Movistar Arena</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta name="theme-color" content="#0F1520">
+<meta property="og:title" content="Sorteo — Movistar Arena">
+<meta property="og:description" content="Sistema de sorteos de entradas para empleados de Movistar Arena">
+<meta property="og:image" content="favicon.png">
+<meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -863,12 +870,12 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
         <div id="gan-recom-list" style="padding-top:8px"></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid rgba(0,212,255,0.18);border-radius:var(--r);background:rgba(0,212,255,0.04);margin-bottom:12px" id="gan-confirm-banner">
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--white)" id="gan-confirm-txt">Confirmá para guardar en Sheets y actualizar el Tracking</div>
-        <div style="font-size:10px;color:var(--gray3);margin-top:2px">Esta acción no se puede deshacer fácilmente</div>
+    <div style="padding:16px 18px;border:1px solid rgba(0,212,255,0.28);border-radius:var(--r);background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,255,0.02));margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.06)" id="gan-confirm-banner">
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--white)" id="gan-confirm-txt">Confirmá para guardar en Sheets y actualizar el Tracking</div>
+        <div style="font-size:10px;color:var(--gray3);margin-top:3px">Esta acción no se puede deshacer fácilmente</div>
       </div>
-      <button class="btn bp" onclick="confirmarGanadores()" style="flex-shrink:0">✓ Confirmar ganadores</button>
+      <button class="btn bp" onclick="confirmarGanadores()" style="width:100%;padding:14px 22px;font-size:14px;font-weight:700;letter-spacing:.5px;box-shadow:0 0 28px rgba(0,212,255,0.32)">✓ Confirmar ganadores</button>
     </div>
   </div>
 
@@ -954,10 +961,17 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
           <button class="btn bo bsm" onclick="selTodos(false)">Ninguno</button>
           <button class="btn ba bsm" onclick="marcarMasivo()">✉ Marcar enviados</button>
           <button class="btn br bsm" onclick="desmarcarTodos()">↩ Desmarcar todos</button>
-          <button class="btn bg_ bsm" id="btn-gmail" onclick="enviarGmail()">⚡ Enviar via Gmail</button>
         </div>
       </div>
       <div id="mail-list"></div>
+    </div>
+
+    <div style="padding:16px 18px;border:1px solid rgba(0,240,160,0.32);border-radius:var(--r);background:linear-gradient(135deg,rgba(0,240,160,0.10),rgba(0,240,160,0.02));margin-top:12px;box-shadow:0 0 32px rgba(0,240,160,0.07)" id="mail-send-banner">
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--white)">Enviar entradas a los ganadores pendientes</div>
+        <div style="font-size:10px;color:var(--gray3);margin-top:3px">Adjunta los PDFs desde Drive y envía desde <span style="color:var(--green)">rrhh@buenosairesarena.com</span></div>
+      </div>
+      <button class="btn bg_" id="btn-gmail" onclick="enviarGmail()" style="width:100%;padding:14px 22px;font-size:14px;font-weight:700;letter-spacing:.5px;background:linear-gradient(135deg,rgba(0,240,160,0.22),rgba(0,240,160,0.12));border:1px solid rgba(0,240,160,0.45);color:var(--green);box-shadow:0 0 28px rgba(0,240,160,0.22)">⚡ Enviar via Gmail</button>
     </div>
   </div>
 
@@ -2995,6 +3009,7 @@ function resetSorteo(){
 function renderStep3(){
   const evId=S.evActivo;
   const{evId:sEvId,lista}=S.sorteo;
+  const hasConfirmados=S.ganadores.some(g=>g.evId===evId);
   if(sEvId===evId&&lista.length){
     document.getElementById("gan-vacio").style.display="none";
     document.getElementById("gan-panel").style.display="block";
@@ -3041,7 +3056,7 @@ function renderStep3(){
     } else ganExcl.style.display="none";
     renderRecomendaciones();
   } else {
-    document.getElementById("gan-vacio").style.display="block";
+    document.getElementById("gan-vacio").style.display=hasConfirmados?"none":"block";
     document.getElementById("gan-panel").style.display="none";
   }
   renderGanConf();
@@ -3227,25 +3242,22 @@ function mostrarPantallaGanadores(lista,ev){
   const showName=(ev.show||ev.nombre||'').toUpperCase();
   const evNombre=(ev.nombre||'').toUpperCase();
   const meta=[fmtF(ev.fecha),ev.hora,ev.venue||'Movistar Arena'].filter(Boolean).join(' · ');
-  const nSize=lista.length>10?18:lista.length>6?22:26;
+  const nSize=lista.length>10?15:lista.length>6?17:19;
 
   const overlay=document.createElement('div');
   overlay.id='reveal-ganadores';
-  overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:28px 20px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.09) 0%,transparent 55%),#090E1A;overflow-y:auto';
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px 16px;box-sizing:border-box;background:rgba(9,14,26,0.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow-y:auto';
 
   const inner=document.createElement('div');
-  inner.style.cssText='width:100%;max-width:600px;margin:auto;text-align:center;padding:8px 0 32px';
+  inner.style.cssText='width:100%;max-width:520px;margin:auto;text-align:center;padding:28px 24px;background:linear-gradient(180deg,rgba(22,32,48,0.95),rgba(13,18,32,0.95));border:1px solid rgba(0,212,255,0.18);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,0.45)';
 
   inner.innerHTML=`
-    <div style="font-size:9px;font-weight:700;letter-spacing:4px;color:rgba(0,212,255,0.5);text-transform:uppercase;margin-bottom:16px;font-family:var(--fb)">MOVISTAR ARENA · RECURSOS HUMANOS</div>
-    <div style="font-family:var(--fd);font-size:58px;font-weight:700;letter-spacing:3px;color:#00D4FF;text-transform:uppercase;line-height:1;text-shadow:0 0 40px rgba(0,212,255,0.35)">GANADORES</div>
-    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.45),transparent);max-width:440px;margin:14px auto 18px"></div>
-    <div style="font-family:var(--fd);font-size:${lista.length>6?26:30}px;font-weight:700;color:#F4F7FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:${showName!==evNombre?3:6}px">${showName}</div>
-    ${showName!==evNombre?`<div style="font-family:var(--fd);font-size:15px;font-weight:600;color:rgba(0,212,255,0.55);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${evNombre}</div>`:''}
-    <div style="font-size:11px;color:rgba(255,255,255,0.28);letter-spacing:.5px;margin-bottom:26px;font-family:var(--fb)">${meta}</div>
-    <div id="reveal-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:26px;text-align:left"></div>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
-      <button class="btn bp" style="font-size:12px;min-width:140px" onclick="var o=document.getElementById('reveal-ganadores');if(o)o.remove()">Continuar →</button>
+    <div style="font-size:9px;font-weight:700;letter-spacing:3px;color:rgba(0,212,255,0.55);text-transform:uppercase;margin-bottom:10px;font-family:var(--fb)">Ganadores confirmados</div>
+    <div style="font-family:var(--fd);font-size:34px;font-weight:700;letter-spacing:1.5px;color:#F4F7FF;text-transform:uppercase;line-height:1;margin-bottom:4px">${showName}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:.3px;margin-bottom:20px;font-family:var(--fb)">${meta}</div>
+    <div id="reveal-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;text-align:left"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
+      <button class="btn bp" style="font-size:12px;min-width:140px;padding:10px 20px" onclick="var o=document.getElementById('reveal-ganadores');if(o)o.remove()">Continuar →</button>
     </div>
     <div id="reveal-wa" style="opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease">
       <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);margin-bottom:22px"></div>
@@ -3266,8 +3278,8 @@ function mostrarPantallaGanadores(lista,ev){
   const listEl=document.getElementById('reveal-list');
   lista.forEach(function(g,i){
     const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:14px;padding:11px 18px;border-radius:10px;border:1px solid rgba(0,212,255,0.13);background:rgba(0,212,255,0.04);opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease';
-    row.innerHTML='<div style="font-family:var(--fd);font-size:17px;font-weight:700;color:rgba(0,212,255,0.38);width:22px;text-align:center;flex-shrink:0;line-height:1">'+(i+1)+'</div><div style="font-family:var(--fd);font-size:'+nSize+'px;font-weight:600;color:#F4F7FF;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nombre+'</div>';
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,212,255,0.12);background:rgba(0,212,255,0.03);opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease';
+    row.innerHTML='<div style="font-family:var(--fd);font-size:13px;font-weight:700;color:rgba(0,212,255,0.4);width:18px;text-align:center;flex-shrink:0;line-height:1">'+(i+1)+'</div><div style="font-family:var(--fd);font-size:'+nSize+'px;font-weight:600;color:#F4F7FF;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+g.nombre+'</div>';
     listEl.appendChild(row);
     setTimeout(function(){row.style.opacity='1';row.style.transform='translateY(0)';},80+i*55);
   });
@@ -3546,7 +3558,7 @@ function renderStep4(){
   document.getElementById("mail-panel").style.display=gans.length?"block":"none";
   if(!gans.length)return;
   if(ev){
-    document.getElementById("mail-ev-name").textContent=ev.nombre;
+    document.getElementById("mail-ev-name").textContent=ev.show||ev.nombre;
     document.getElementById("mail-ev-meta").textContent=fdL(ev.fecha)+" · "+(ev.venue||"Movistar Arena")+(ev.entradasXGan>1?" · "+ev.entradasXGan+" entradas/gan.":"");
   }
   const asuntoEl=document.getElementById("mail-asunto");

@@ -1,0 +1,11 @@
+# Claude Code config local
+.claude/
+
+# Netlify CLI cache
+.netlify/
+
+# Office/Word lock files
+~$*
+
+# Carpetas auxiliares locales
+files/

@@ -30,6 +30,12 @@ const CONFIG = {
   // Nombre del remitente en los mails
   MAIL_REMITENTE: "Movistar Arena — RRHH",
 
+  // Alias compartido desde el que se envían los mails.
+  // Requisito: cada usuario que use la app debe tener este alias agregado
+  // en Gmail → ⚙ → Configuración → Cuentas → "Enviar como".
+  // Si el usuario NO lo tiene configurado, Gmail envía desde su propia cuenta como fallback.
+  MAIL_FROM_ALIAS: "rrhh@buenosairesarena.com",
+
   // Asunto del mail (variables: {nombre}, {evento})
   MAIL_ASUNTO: "Ganaste entradas para {evento}!",
 
@@ -308,7 +314,11 @@ function enviarMails(showId, entradasXGan) {
         .replace(/{venue}/g, g.venue)
         .replace(/{fecha}/g, g.fecha);
 
-      const opts = { name: CONFIG.MAIL_REMITENTE };
+      const opts = {
+        name: CONFIG.MAIL_REMITENTE,
+        from: CONFIG.MAIL_FROM_ALIAS,
+        replyTo: CONFIG.MAIL_FROM_ALIAS
+      };
 
       // Adjuntar N PDFs por ganador según entradasXGan
       const pdfStart = i * entradasXGan;
@@ -517,15 +527,29 @@ function trackingGanadores(ganadores, showNombre, fecha, entradasXGan) {
 
     // NEVER touch columns A and B (they have formulas)
     // Always insert new show at column C, pushing existing data to the right
-    // First check if this show already has a column (to avoid duplicates)
+    // Match by SHOW + FECHA: distinct dates of the same show = distinct columns
     var lastCol = hoja.getLastColumn();
     var existingCol = -1;
 
+    // Normalize fecha to DD/MM/YYYY (handles Date objects coming back from Sheets)
+    var normFecha = function(d) {
+      if (!d) return "";
+      if (d instanceof Date) {
+        var dd = String(d.getDate()).padStart(2, "0");
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        return dd + "/" + mm + "/" + d.getFullYear();
+      }
+      return String(d).trim();
+    };
+    var fechaNorm = normFecha(fecha);
+
     if (lastCol >= 3) {
-      // Check row 2 for show names
       var showHeaders = hoja.getRange(2, 3, 1, lastCol - 2).getValues()[0];
+      var dateHeaders = hoja.getRange(1, 3, 1, lastCol - 2).getValues()[0];
       for (var c = 0; c < showHeaders.length; c++) {
-        if (String(showHeaders[c]).trim().toUpperCase() === showNombre.trim().toUpperCase()) {
+        var showMatch = String(showHeaders[c]).trim().toUpperCase() === showNombre.trim().toUpperCase();
+        var fechaMatch = normFecha(dateHeaders[c]) === fechaNorm;
+        if (showMatch && fechaMatch) {
           existingCol = c + 3;
           break;
         }

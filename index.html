@@ -4128,6 +4128,8 @@ function startApp(){
   setTimeout(function(){syncShowsFromCloud();},800);
   // Cargar tracking de ganadores (~1.5s)
   setTimeout(function(){importarDesdeTracking(true);},1500);
+  // Polling silencioso cada 60s para detectar cambios remotos en eventos
+  setInterval(pollShowsLight,60000);
 }
 // INIT
 if(sessionStorage.getItem("ma_auth")==="1"){

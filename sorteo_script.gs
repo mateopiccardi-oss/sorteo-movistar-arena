@@ -1068,17 +1068,18 @@ function getShowsCloud() {
       const id = String(datos[i][0]).trim();
       if (!id) continue;
       shows.push({
-        id:           id,
-        show:         String(datos[i][1] || "").trim(),
-        nombre:       String(datos[i][2] || "").trim(),
-        fecha:        formatFecha(datos[i][3]),
-        hora:         String(datos[i][4] || "").trim(),
-        venue:        String(datos[i][5] || "").trim(),
-        cantidad:     parseInt(datos[i][6]) || 2,
-        entradasXGan: parseInt(datos[i][7]) || 1,
-        formUrl:      String(datos[i][8] || "").trim(),
-        antiRep:      String(datos[i][9]).trim() !== "0",
-        creadoEn:     String(datos[i][10] || "").trim(),
+        id:            id,
+        show:          String(datos[i][1] || "").trim(),
+        nombre:        String(datos[i][2] || "").trim(),
+        fecha:         formatFecha(datos[i][3]),
+        hora:          String(datos[i][4] || "").trim(),
+        venue:         String(datos[i][5] || "").trim(),
+        cantidad:      parseInt(datos[i][6]) || 2,
+        entradasXGan:  parseInt(datos[i][7]) || 1,
+        formUrl:       String(datos[i][8] || "").trim(),
+        antiRep:       String(datos[i][9]).trim() !== "0",
+        creadoEn:      String(datos[i][10] || "").trim(),
+        actualizadoEn: String(datos[i][11] || "").trim(),
       });
     }
     Logger.log("getShowsCloud: " + shows.length + " shows devueltos.");

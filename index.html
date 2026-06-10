@@ -1187,6 +1187,26 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
   </div>
 </div>
 
+<div class="mbg" id="modal-conflict">
+  <div class="modal" style="width:480px">
+    <div class="modal-t">Cambio detectado</div>
+    <p style="font-size:13px;color:var(--white);margin-bottom:10px">
+      Este evento se modificó en la nube mientras lo editabas.
+    </p>
+    <p style="font-size:12px;color:var(--gray2);margin-bottom:16px">
+      Última actualización remota: <span id="conflict-version">—</span>
+    </p>
+    <p style="font-size:12px;color:var(--gray2);margin-bottom:18px">
+      Para no pisar el trabajo del otro usuario, elegí qué hacer:
+    </p>
+    <div class="modal-acts">
+      <button class="btn bo" onclick="cerrarModalConflicto()">Cancelar</button>
+      <button class="btn br bsm" onclick="conflictoPisarIgual()">Pisar igual</button>
+      <button class="btn bp" onclick="conflictoVerCambios()">Ver cambios primero</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1466,6 +1486,64 @@ async function guardarEvento(){
   api({action:"setShowSchedule",showId:slug2,closeAt:closeAt}).catch(()=>{});
   closeModal("modal-edit");
   toast("Evento actualizado");
+  updateTopbar();
+  renderDash();
+}
+// ─── MODAL DE CONFLICTO ─────────────────────────────────────
+let _conflictState=null; // {evId, currentShow, currentVersion}
+
+function abrirModalConflicto(ev,currentShow,currentVersion){
+  _conflictState={evId:ev.id,currentShow:currentShow,currentVersion:currentVersion};
+  document.getElementById("conflict-version").textContent=currentVersion||"—";
+  document.getElementById("modal-conflict").classList.add("show");
+}
+
+function cerrarModalConflicto(){
+  document.getElementById("modal-conflict").classList.remove("show");
+  _conflictState=null;
+}
+
+function conflictoVerCambios(){
+  if(!_conflictState)return;
+  const ev=S.eventos.find(e=>e.id===_conflictState.evId);
+  if(!ev){cerrarModalConflicto();return;}
+  // Sobrescribir el evento local con currentShow del cloud
+  const cs=_conflictState.currentShow||{};
+  ev.show=cs.show||ev.show;
+  ev.nombre=cs.nombre||ev.nombre;
+  ev.fecha=cs.fecha||ev.fecha;
+  ev.hora=cs.hora||ev.hora;
+  ev.venue=cs.venue||ev.venue;
+  ev.cantidad=cs.cantidad||ev.cantidad;
+  ev.entradasXGan=cs.entradasXGan||ev.entradasXGan;
+  ev.formUrl=cs.formUrl||ev.formUrl;
+  ev.antiRep=cs.antiRep!==false;
+  ev._version=_conflictState.currentVersion||ev._version;
+  ev._versionAtOpen=ev._version;
+  save();
+  // Recargar el editor con los datos nuevos
+  cerrarModalConflicto();
+  closeModal("modal-edit");
+  abrirEdit(ev.id);
+  renderDash();
+  toast("Editor recargado con la versión nueva");
+}
+
+async function conflictoPisarIgual(){
+  if(!_conflictState)return;
+  const ev=S.eventos.find(e=>e.id===_conflictState.evId);
+  if(!ev){cerrarModalConflicto();return;}
+  // ev ya tiene los edits del usuario (guardarEvento no los revierte).
+  // Re-llamar upsertShow SIN expectedVersion → pisa el cloud con los edits locales.
+  const res=await api({action:"upsertShow",show:ev});
+  if(res&&res.ok&&res.newVersion){
+    ev._version=res.newVersion;
+    ev._versionAtOpen=res.newVersion;
+    save();
+  }
+  cerrarModalConflicto();
+  closeModal("modal-edit");
+  toast("Evento guardado pisando los cambios remotos");
   updateTopbar();
   renderDash();
 }

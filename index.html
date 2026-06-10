@@ -205,6 +205,17 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .tok{border:1px solid rgba(0,240,160,0.25);color:var(--green)}
 .twn{border:1px solid rgba(255,176,32,0.25);color:var(--amber)}
 
+/* BANNER DE CAMBIOS REMOTOS EN EDITOR */
+.ev-banner{display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--rsm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--white);line-height:1.45}
+.ev-banner.on{display:block}
+.ev-banner.delete{background:var(--red-bg);border-color:var(--red)}
+.ev-banner-msg{margin-bottom:8px}
+.ev-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ev-banner-btn{font-size:11px;padding:5px 10px;border:1px solid var(--line2);border-radius:var(--rsm);background:transparent;color:var(--white);cursor:pointer;font-family:var(--fb);font-weight:600;transition:all .15s}
+.ev-banner-btn:hover{background:rgba(255,255,255,0.08)}
+.ev-banner-btn.pri{background:var(--amber);color:var(--bg);border-color:var(--amber)}
+.ev-banner.delete .ev-banner-btn.pri{background:var(--red);border-color:var(--red);color:var(--white)}
+
 /* NAV BTNS */
 .nav-btns{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 
@@ -1109,6 +1120,10 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 <div class="mbg" id="modal-edit">
   <div class="modal" style="width:520px">
     <div class="modal-t">Editar evento</div>
+    <div class="ev-banner" id="edit-banner">
+      <div class="ev-banner-msg" id="edit-banner-msg">—</div>
+      <div class="ev-banner-actions" id="edit-banner-actions"></div>
+    </div>
     <input type="hidden" id="edit-id">
     <div class="r2">
       <div class="field"><label>Artista / Show *</label><input id="edit-show"></div>
@@ -1443,6 +1458,7 @@ function abrirEdit(id){
   document.getElementById("edit-anti").checked=ev.antiRep!==false;
   const slug=ev.id.toUpperCase().replace(/[^A-Z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
   document.getElementById("edit-closeat").value=S.schedules[slug]||"";
+  ocultarBanner();
   document.getElementById("modal-edit").classList.add("show");
 }
 async function guardarEvento(){
@@ -3998,7 +4014,55 @@ async function pollShowsLight(){
 }
 
 // Stubs — implementados en Tasks 9 y 10
-function mostrarBannerActualizado(cloudShow){}
+let _bannerState=null; // {tipo:'updated'|'deleted', cloudShow|localEv}
+
+function mostrarBannerActualizado(cloudShow){
+  _bannerState={tipo:"updated",cloudShow:cloudShow};
+  const banner=document.getElementById("edit-banner");
+  banner.classList.remove("delete");
+  banner.classList.add("on");
+  document.getElementById("edit-banner-msg").textContent=
+    "Otra persona actualizó este evento. Tu edición está sobre una versión vieja.";
+  document.getElementById("edit-banner-actions").innerHTML=
+    '<button class="ev-banner-btn pri" onclick="bannerVerCambios()">Ver cambios</button>'+
+    '<button class="ev-banner-btn" onclick="bannerSeguirEditando()">Seguir editando</button>';
+}
+
+function ocultarBanner(){
+  const banner=document.getElementById("edit-banner");
+  if(banner){banner.classList.remove("on","delete");}
+  _bannerState=null;
+}
+
+function bannerVerCambios(){
+  if(!_bannerState||_bannerState.tipo!=="updated")return;
+  const cs=_bannerState.cloudShow;
+  const ev=S.eventos.find(e=>e.id===cs.id);
+  if(!ev){ocultarBanner();return;}
+  // Pisar campos del evento local con cloud
+  Object.assign(ev,cs,{_version:cs.actualizadoEn||ev._version});
+  ev._versionAtOpen=ev._version;
+  save();
+  // Re-cargar los inputs del editor
+  document.getElementById("edit-show").value=ev.show||"";
+  document.getElementById("edit-nombre").value=ev.nombre||"";
+  document.getElementById("edit-fecha").value=ev.fecha||"";
+  document.getElementById("edit-hora").value=ev.hora||"";
+  document.getElementById("edit-cant").value=ev.cantidad||2;
+  document.getElementById("edit-exg").value=ev.entradasXGan||1;
+  document.getElementById("edit-venue").value=ev.venue||"";
+  document.getElementById("edit-form").value=ev.formUrl||"";
+  document.getElementById("edit-anti").checked=ev.antiRep!==false;
+  ocultarBanner();
+  renderDash();
+  toast("Editor actualizado con la versión nueva");
+}
+
+function bannerSeguirEditando(){
+  // _versionAtOpen NO se toca → al guardar va a saltar el modal de conflicto
+  ocultarBanner();
+}
+
 function mostrarBannerEliminado(localEv){}
 function startApp(){
   load();

@@ -4063,7 +4063,63 @@ function bannerSeguirEditando(){
   ocultarBanner();
 }
 
-function mostrarBannerEliminado(localEv){}
+function mostrarBannerEliminado(localEv){
+  _bannerState={tipo:"deleted",localEv:localEv};
+  const banner=document.getElementById("edit-banner");
+  banner.classList.add("on","delete");
+  document.getElementById("edit-banner-msg").textContent=
+    "Otra persona eliminó este evento. Si guardás se va a restaurar.";
+  document.getElementById("edit-banner-actions").innerHTML=
+    '<button class="ev-banner-btn pri" onclick="bannerRestaurar()">Restaurar y guardar mis cambios</button>'+
+    '<button class="ev-banner-btn" onclick="bannerDescartar()">Descartar</button>';
+}
+
+async function bannerRestaurar(){
+  if(!_bannerState||_bannerState.tipo!=="deleted")return;
+  const ev=_bannerState.localEv;
+  // Si el evento ya no está en S.eventos (porque el poller lo borró antes), re-pushear
+  if(!S.eventos.find(e=>e.id===ev.id)){
+    S.eventos.push(ev);
+    S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  }
+  // Re-aplicar los valores del form al evento local (lo que el usuario tenía en pantalla)
+  const formEv=S.eventos.find(e=>e.id===ev.id);
+  formEv.show=document.getElementById("edit-show").value.trim()||formEv.show;
+  formEv.nombre=document.getElementById("edit-nombre").value.trim()||formEv.nombre;
+  formEv.fecha=document.getElementById("edit-fecha").value||formEv.fecha;
+  formEv.hora=document.getElementById("edit-hora").value;
+  formEv.cantidad=parseInt(document.getElementById("edit-cant").value)||formEv.cantidad;
+  formEv.entradasXGan=parseInt(document.getElementById("edit-exg").value)||formEv.entradasXGan;
+  formEv.venue=document.getElementById("edit-venue").value.trim();
+  formEv.formUrl=document.getElementById("edit-form").value.trim();
+  formEv.antiRep=document.getElementById("edit-anti").checked;
+  save();
+  // Crear de vuelta en el cloud — sin expectedVersion (es un restore consciente)
+  const res=await api({action:"upsertShow",show:formEv});
+  if(res&&res.ok&&res.newVersion){
+    formEv._version=res.newVersion;
+    formEv._versionAtOpen=res.newVersion;
+    save();
+  }
+  ocultarBanner();
+  closeModal("modal-edit");
+  toast("Evento restaurado");
+  updateTopbar();
+  renderDash();
+}
+
+function bannerDescartar(){
+  if(!_bannerState||_bannerState.tipo!=="deleted")return;
+  const id=_bannerState.localEv.id;
+  S.eventos=S.eventos.filter(e=>e.id!==id);
+  if(S.evActivo===id){S.evActivo=S.eventos.length?S.eventos[0].id:null;}
+  save();
+  ocultarBanner();
+  closeModal("modal-edit");
+  toast("Evento descartado");
+  updateTopbar();
+  renderDash();
+}
 function startApp(){
   load();
   renderDash();

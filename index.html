@@ -3917,6 +3917,89 @@ async function syncShowsFromCloud(){
     console.warn("syncShowsFromCloud error:",e);
   }
 }
+// ─── POLLER SILENCIOSO ──────────────────────────────────────
+let _pollInFlight=false;
+
+async function pollShowsLight(){
+  if(document.visibilityState!=="visible")return;
+  if(_pollInFlight)return;
+  _pollInFlight=true;
+  try{
+    const res=await api({action:"getShowsCloud"});
+    if(!res||!res.ok||!Array.isArray(res.shows)){return;}
+
+    const cloudById=new Map(res.shows.map(s=>[s.id,s]));
+    const editorOpen=document.getElementById("modal-edit").classList.contains("show");
+    const editorEvId=editorOpen?document.getElementById("edit-id").value:null;
+    const sorteoEvId=S.sorteo&&S.sorteo.evId;
+    let huboCambios=false;
+
+    // 1. Cloud-side updates y creates
+    for(const cs of res.shows){
+      const local=S.eventos.find(e=>e.id===cs.id);
+      const cloudVer=cs.actualizadoEn||"";
+      if(!local){
+        // Evento nuevo en cloud
+        S.eventos.push({...cs,_version:cloudVer});
+        huboCambios=true;
+        continue;
+      }
+      if(cloudVer&&cloudVer!==(local._version||"")){
+        if(cs.id===editorEvId){
+          // Evento abierto en editor → no pisar campos, solo actualizar _version y mostrar banner
+          local._version=cloudVer;
+          mostrarBannerActualizado(cs);
+          huboCambios=true;
+        }else if(cs.id===sorteoEvId){
+          // Sorteo en curso → ignorar
+          continue;
+        }else{
+          // Reemplazo silencioso
+          Object.assign(local,cs);
+          local._version=cloudVer;
+          huboCambios=true;
+        }
+      }
+    }
+
+    // 2. Cloud-side deletes (soft-delete: existe local pero no en cloud)
+    const cloudIds=new Set(res.shows.map(s=>s.id));
+    const aBorrar=[];
+    for(const ev of S.eventos){
+      if(!cloudIds.has(ev.id)){
+        if(ev.id===editorEvId){
+          mostrarBannerEliminado(ev);
+        }else if(ev.id===sorteoEvId){
+          // Sorteo en curso → no borrar
+        }else{
+          aBorrar.push(ev.id);
+        }
+      }
+    }
+    if(aBorrar.length){
+      S.eventos=S.eventos.filter(e=>!aBorrar.includes(e.id));
+      if(S.evActivo&&aBorrar.includes(S.evActivo)){
+        S.evActivo=S.eventos.length?S.eventos[0].id:null;
+      }
+      huboCambios=true;
+    }
+
+    if(huboCambios){
+      S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      save();
+      renderDash();
+      updateTopbar();
+    }
+  }catch(e){
+    console.warn("pollShowsLight error:",e);
+  }finally{
+    _pollInFlight=false;
+  }
+}
+
+// Stubs — implementados en Tasks 9 y 10
+function mostrarBannerActualizado(cloudShow){}
+function mostrarBannerEliminado(localEv){}
 function startApp(){
   load();
   renderDash();

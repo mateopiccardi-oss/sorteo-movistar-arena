@@ -1409,6 +1409,8 @@ function crearEvento(){
 function abrirEdit(id){
   const ev=S.eventos.find(e=>e.id===id);
   if(!ev)return;
+  // Snapshot de la versión cloud al abrir — usado como expectedVersion al guardar
+  ev._versionAtOpen=ev._version||"";
   document.getElementById("edit-id").value=id;
   document.getElementById("edit-show").value=ev.show||"";
   document.getElementById("edit-nombre").value=ev.nombre||"";

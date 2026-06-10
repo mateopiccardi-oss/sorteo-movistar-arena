@@ -1096,6 +1096,7 @@ function upsertShow(show) {
     const hoja = _ensureShowsSheet();
     const datos = hoja.getDataRange().getValues();
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+    const expectedVersion = show.expectedVersion || null;
     const row = [
       String(show.id),
       String(show.show || ""),
@@ -1114,16 +1115,37 @@ function upsertShow(show) {
     // Buscar si ya existe
     for (let i = 1; i < datos.length; i++) {
       if (String(datos[i][0]).trim() === String(show.id).trim()) {
+        const currentVersion = String(datos[i][11] || "").trim();
+        // Chequeo de optimistic locking
+        if (expectedVersion && expectedVersion !== currentVersion) {
+          // Construir el show actual del cloud para devolverlo
+          const currentShow = {
+            id:            String(datos[i][0]).trim(),
+            show:          String(datos[i][1] || "").trim(),
+            nombre:        String(datos[i][2] || "").trim(),
+            fecha:         String(datos[i][3] || "").trim(),
+            hora:          String(datos[i][4] || "").trim(),
+            venue:         String(datos[i][5] || "").trim(),
+            cantidad:      parseInt(datos[i][6]) || 2,
+            entradasXGan:  parseInt(datos[i][7]) || 1,
+            formUrl:       String(datos[i][8] || "").trim(),
+            antiRep:       String(datos[i][9]).trim() !== "0",
+            creadoEn:      String(datos[i][10] || "").trim(),
+            actualizadoEn: currentVersion,
+          };
+          Logger.log("upsertShow (conflict): " + show.id + " expected=" + expectedVersion + " current=" + currentVersion);
+          return { ok: false, error: "conflict", currentVersion: currentVersion, currentShow: currentShow };
+        }
         // Conservar creadoEn original
         row[10] = String(datos[i][10] || now);
         hoja.getRange(i + 1, 1, 1, 13).setValues([row]);
         Logger.log("upsertShow (actualizado): " + show.id);
-        return { ok: true, accion: "actualizado" };
+        return { ok: true, accion: "actualizado", newVersion: now };
       }
     }
     hoja.appendRow(row);
     Logger.log("upsertShow (creado): " + show.id);
-    return { ok: true, accion: "creado" };
+    return { ok: true, accion: "creado", newVersion: now };
   } catch(e) {
     Logger.log("Error en upsertShow: " + e.message);
     return { ok: false, error: e.message };

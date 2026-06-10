@@ -1409,7 +1409,7 @@ function autoFillShowBase(){
     document.getElementById("ev-anti").checked=existing.antiRep!==false;
   }
 }
-function crearEvento(){
+async function crearEvento(){
   const tipo=document.getElementById("ev-tipo-fecha").className.includes("bp")?"fecha":"nuevo";
   const show=tipo==="fecha"
     ?document.getElementById("ev-showbase").value.trim()
@@ -1432,9 +1432,16 @@ function crearEvento(){
   S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
   S.evActivo=id;
   save();
-  // Sincronizar con la nube en background
+  // Sincronizar con la nube — esperamos para capturar newVersion
   const _evCreado=S.eventos.find(e=>e.id===id);
-  if(_evCreado) api({action:"upsertShow",show:_evCreado}).catch(()=>{});
+  if(_evCreado){
+    const res=await api({action:"upsertShow",show:_evCreado});
+    if(res&&res.ok&&res.newVersion){
+      _evCreado._version=res.newVersion;
+      _evCreado._versionAtOpen=res.newVersion;
+      save();
+    }
+  }
   closeModal("modal-ev");
   toast("Evento creado — iniciando wizard");
   updateTopbar();

@@ -1091,7 +1091,11 @@ function getShowsCloud() {
 }
 
 function upsertShow(show) {
+  const lock = LockService.getScriptLock();
   try {
+    if (!lock.tryLock(5000)) {
+      return { ok: false, error: "lock_timeout" };
+    }
     if (!show || !show.id) return { ok: false, error: "show.id requerido" };
     const hoja = _ensureShowsSheet();
     const datos = hoja.getDataRange().getValues();
@@ -1149,6 +1153,8 @@ function upsertShow(show) {
   } catch(e) {
     Logger.log("Error en upsertShow: " + e.message);
     return { ok: false, error: e.message };
+  } finally {
+    try { lock.releaseLock(); } catch(_) {}
   }
 }
 

@@ -1044,6 +1044,13 @@ function _ensureShowsSheet() {
   return hoja;
 }
 
+function _formatVersion(val) {
+  if (Object.prototype.toString.call(val) === "[object Date]") {
+    return Utilities.formatDate(val, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+  }
+  return String(val || "").trim();
+}
+
 function getShowsCloud() {
   try {
     const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
@@ -1079,7 +1086,7 @@ function getShowsCloud() {
         formUrl:       String(datos[i][8] || "").trim(),
         antiRep:       String(datos[i][9]).trim() !== "0",
         creadoEn:      String(datos[i][10] || "").trim(),
-        actualizadoEn: String(datos[i][11] || "").trim(),
+        actualizadoEn: _formatVersion(datos[i][11]),
       });
     }
     Logger.log("getShowsCloud: " + shows.length + " shows devueltos.");
@@ -1119,7 +1126,7 @@ function upsertShow(show) {
     // Buscar si ya existe
     for (let i = 1; i < datos.length; i++) {
       if (String(datos[i][0]).trim() === String(show.id).trim()) {
-        const currentVersion = String(datos[i][11] || "").trim();
+        const currentVersion = _formatVersion(datos[i][11]);
         // Chequeo de optimistic locking
         if (expectedVersion && expectedVersion !== currentVersion) {
           // Construir el show actual del cloud para devolverlo

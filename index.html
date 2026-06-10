@@ -1425,7 +1425,7 @@ function abrirEdit(id){
   document.getElementById("edit-closeat").value=S.schedules[slug]||"";
   document.getElementById("modal-edit").classList.add("show");
 }
-function guardarEvento(){
+async function guardarEvento(){
   const id=document.getElementById("edit-id").value;
   const ev=S.eventos.find(e=>e.id===id);
   if(!ev)return;
@@ -1433,6 +1433,7 @@ function guardarEvento(){
   const nombre=document.getElementById("edit-nombre").value.trim();
   const fecha=document.getElementById("edit-fecha").value;
   if(!show||!nombre||!fecha){toast("Completá los campos obligatorios","warn");return;}
+
   ev.show=show; ev.nombre=nombre; ev.fecha=fecha;
   ev.hora=document.getElementById("edit-hora").value;
   ev.cantidad=parseInt(document.getElementById("edit-cant").value)||2;
@@ -1446,8 +1447,22 @@ function guardarEvento(){
   const closeAt=document.getElementById("edit-closeat").value;
   S.schedules[slug2]=closeAt;
   save();
-  // Sincronizar evento actualizado con la nube en background
-  api({action:"upsertShow",show:ev}).catch(()=>{});
+
+  // Sincronizar evento actualizado con la nube — await con expectedVersion
+  const payload={...ev,expectedVersion:ev._versionAtOpen||""};
+  const res=await api({action:"upsertShow",show:payload});
+  if(res&&res.error==="conflict"){
+    // No revertimos: los edits del usuario quedan en ev y en el form.
+    // El modal le da las 3 opciones (Ver cambios / Pisar igual / Cancelar).
+    // Si elige Cancelar, ev queda divergente y el sistema se recupera por el siguiente poll o save.
+    abrirModalConflicto(ev,res.currentShow,res.currentVersion);
+    return;
+  }
+  if(res&&res.ok&&res.newVersion){
+    ev._version=res.newVersion;
+    ev._versionAtOpen=res.newVersion;
+    save();
+  }
   api({action:"setShowSchedule",showId:slug2,closeAt:closeAt}).catch(()=>{});
   closeModal("modal-edit");
   toast("Evento actualizado");

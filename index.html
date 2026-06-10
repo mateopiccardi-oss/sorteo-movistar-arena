@@ -3808,7 +3808,7 @@ async function syncShowsFromCloud(){
     }
     if(!res.shows.length)return; // No sobreescribir locales si la nube está vacía
     // Merge: la nube tiene prioridad, pero conservar ganadores/sorteo locales
-    S.eventos=res.shows;
+    S.eventos=res.shows.map(s=>({...s,_version:s.actualizadoEn||""}));
     S.eventos.sort((a,b)=>b.fecha.localeCompare(a.fecha));
     // Validar que evActivo aún existe
     if(S.evActivo&&!S.eventos.find(e=>e.id===S.evActivo)){

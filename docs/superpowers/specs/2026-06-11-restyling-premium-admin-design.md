@@ -38,7 +38,7 @@ Colores, fuentes y tamaños de fuente existentes **no cambian** (salvo título d
 
 ## Cambio funcional: stat "Participación"
 
-Se elimina la tarjeta de participación del dashboard y cualquier cálculo/render asociado exclusivo de esa stat. La grilla `.stats` pasa de 4 a 3 columnas (responsive: 2 columnas en mobile como hoy). `totalEmpleados` se conserva en el estado (lo devuelve `leerTracking` y puede servir después), solo desaparece la tarjeta.
+Verificado en el código: la stat de participación **no existe en el dashboard actual** (el mockup la inventó; los KPIs reales son Eventos / Inscriptos / Ganadores). El pedido del usuario se cumple así: **no se agrega** ninguna métrica de participación, y se elimina la función muerta `renderTasa()` (index.html:2568-2601), que calcula esa métrica para elementos `tasa-*` que ya no existen en el HTML y que ninguna parte del código llama.
 
 ## Implementación
 

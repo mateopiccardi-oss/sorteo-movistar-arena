@@ -57,6 +57,33 @@ Equipo Movistar Arena`,
 };
 
 // ============================================================
+//  AUTH — acciones públicas vs. admin
+//  El token es el SHA-256 hex del PIN, guardado en Script Properties.
+//  Setup: ejecutar configurarPin() una vez desde el editor.
+// ============================================================
+const PUBLIC_ACTIONS = ["validarMail", "inscribir", "checkShowActivo", "validarPin"];
+
+function _authOk(body) {
+  const stored = PropertiesService.getScriptProperties().getProperty("ADMIN_HASH");
+  if (!stored) return false; // sin PIN configurado → acciones admin bloqueadas
+  return !!(body && body.token === stored);
+}
+
+function _sha256hex(s) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8);
+  return bytes.map(function(b) { return ((b + 256) % 256).toString(16).padStart(2, "0"); }).join("");
+}
+
+// SETUP (una sola vez): ① escribí el PIN nuevo acá, ② Ejecutar → configurarPin
+// desde el editor de Apps Script, ③ volvé a dejar el placeholder y guardá.
+function configurarPin() {
+  const PIN = "PONE_EL_PIN_ACA";
+  if (PIN === "PONE_EL_PIN_ACA") throw new Error("Editá la constante PIN con el PIN nuevo antes de ejecutar.");
+  PropertiesService.getScriptProperties().setProperty("ADMIN_HASH", _sha256hex(PIN));
+  Logger.log("PIN configurado correctamente.");
+}
+
+// ============================================================
 //  ROUTER — maneja todos los requests de la app
 // ============================================================
 function doPost(e) {
@@ -64,7 +91,12 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const action = body.action;
 
+    if (PUBLIC_ACTIONS.indexOf(action) === -1 && !_authOk(body)) {
+      return resp({ ok: false, error: "No autorizado" });
+    }
+
     switch (action) {
+      case "validarPin":        return resp({ ok: true, valido: _authOk(body) });
       case "validarMail":       return resp(validarMail(body.mail));
       case "inscribir":         return resp(inscribir(body.mail, body.showId, body.showNombre, body.fecha));
       case "getInscriptos":     return resp(getInscriptos(body.showId));

@@ -300,9 +300,22 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
 //        📄 entrada_2.pdf
 // ============================================================
 function enviarMails(showId, entradasXGan) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (e) {
+    return { ok: false, error: "Otro envío está en curso — esperá unos segundos y reintentá." };
+  }
+  try {
+    return _enviarMailsLocked(showId, entradasXGan);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function _enviarMailsLocked(showId, entradasXGan) {
   if (!showId) return { ok: false, error: "Show ID requerido" };
   entradasXGan = parseInt(entradasXGan) || 1;
-  Logger.log("Entradas por ganador: " + entradasXGan);
 
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
   const hoja = ss.getSheetByName("Ganadores");
@@ -310,10 +323,9 @@ function enviarMails(showId, entradasXGan) {
 
   const datos = hoja.getDataRange().getValues();
   const ganadores = [];
-  const filas = [];
 
   for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][1]).trim() === String(showId).trim() && datos[i][7] === "Pendiente") {
+    if (String(datos[i][1]).trim() === String(showId).trim() && String(datos[i][7]).trim() === "Pendiente") {
       ganadores.push({
         mail: String(datos[i][5]).trim(),
         nombre: String(datos[i][6]).trim(),
@@ -322,20 +334,30 @@ function enviarMails(showId, entradasXGan) {
         venue: String(datos[i][4]).trim(),
         fila: i + 1,
       });
-      filas.push(i + 1);
     }
   }
 
-  if (!ganadores.length) return { ok: true, enviados: 0, mensaje: "No hay ganadores pendientes" };
+  if (!ganadores.length) return { ok: true, enviados: 0, enviadosMails: [], mensaje: "No hay ganadores pendientes" };
 
   // Buscar PDFs en Drive (por nombre del show o por ID)
-  const showNombre2 = ganadores.length > 0 ? ganadores[0].showNombre : "";
-  const pdfs = buscarPDFs(showId, showNombre2);
+  const pdfs = buscarPDFs(showId, ganadores[0].showNombre);
+
+  // Regla estricta: si los PDFs no alcanzan, no se envía NINGÚN mail
+  const necesarios = ganadores.length * entradasXGan;
+  if (pdfs.length < necesarios) {
+    return {
+      ok: false,
+      error: "Hay " + pdfs.length + " PDF(s) en Drive y se necesitan " + necesarios +
+             " (" + ganadores.length + " ganador(es) × " + entradasXGan + " entrada(s)) — no se envió ningún mail."
+    };
+  }
 
   const errores = [];
+  const enviadosMails = [];
   let enviados = 0;
 
   ganadores.forEach((g, i) => {
+    let sent = false;
     try {
       const asunto = CONFIG.MAIL_ASUNTO
         .replace(/{nombre}/g, g.nombre)
@@ -353,37 +375,40 @@ function enviarMails(showId, entradasXGan) {
         replyTo: CONFIG.MAIL_FROM_ALIAS
       };
 
-      // Adjuntar N PDFs por ganador según entradasXGan
+      // Adjuntar N PDFs por ganador según entradasXGan (el pre-check garantiza que alcanzan)
       const pdfStart = i * entradasXGan;
       const pdfSlice = pdfs.slice(pdfStart, pdfStart + entradasXGan);
-      if (pdfSlice.length > 0) {
-        opts.attachments = pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); });
-        Logger.log("Ganador " + (i+1) + " (" + g.nombre + "): " + pdfSlice.length + " PDF(s) adjuntos");
-      } else {
-        Logger.log("Ganador " + (i+1) + " (" + g.nombre + "): sin PDFs disponibles (offset " + pdfStart + ")");
-      }
+      opts.attachments = pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); });
 
       // Enviar como HTML para soportar UTF-8 y emojis correctamente
       opts.htmlBody = cuerpo.replace(/\n/g, "<br>");
-      GmailApp.sendEmail(g.mail, asunto, cuerpo, opts);
 
-      // Marcar como enviado en el Sheet
+      // Marcar ANTES de enviar: si la ejecución se corta acá, un reintento
+      // solo retoma filas "Pendiente" y nunca duplica este mail
+      hoja.getRange(g.fila, 8).setValue("Enviando");
+      GmailApp.sendEmail(g.mail, asunto, cuerpo, opts);
+      sent = true;
       hoja.getRange(g.fila, 8).setValue("Enviado");
-      hoja.getRange(g.fila, 9).setValue(pdfSlice.length > 0 ? pdfSlice.map(function(p){return p.getName();}).join(", ") : "Sin PDF");
+      hoja.getRange(g.fila, 9).setValue(pdfSlice.map(function(p) { return p.getName(); }).join(", "));
 
       enviados++;
+      enviadosMails.push(g.mail);
       Utilities.sleep(1200);
     } catch (err) {
-      errores.push(`${g.nombre} (${g.mail}): ${err.message}`);
+      if (!sent) {
+        try { hoja.getRange(g.fila, 8).setValue("Pendiente"); } catch (e2) {}
+      }
+      errores.push(g.nombre + " (" + g.mail + "): " + err.message);
     }
   });
 
   return {
     ok: true,
-    enviados,
-    errores,
-    mensaje: `${enviados} mail${enviados !== 1 ? 's' : ''} enviado${enviados !== 1 ? 's' : ''}` +
-             (errores.length ? ` · ${errores.length} con error` : '')
+    enviados: enviados,
+    enviadosMails: enviadosMails,
+    errores: errores,
+    mensaje: enviados + " mail" + (enviados !== 1 ? "s" : "") + " enviado" + (enviados !== 1 ? "s" : "") +
+             (errores.length ? " · " + errores.length + " con error" : "")
   };
 }
 

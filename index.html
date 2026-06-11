@@ -2576,41 +2576,6 @@ function parseFecha(str){
   return "";
 }
 
-function renderTasa(){
-  // Get unique people who ever ganaron
-  var ganadoresEmails={};
-  S.ganadores.forEach(function(g){
-    if(g.email)ganadoresEmails[g.email.toLowerCase()]=true;
-  });
-  var ganaron=Object.keys(ganadoresEmails).length;
-
-  // Total empleados - try to get from participantes or use ganadores count
-  // If we have participantes loaded use them, else estimate from Hoja 1 sheet count
-  var totalEmpleados=S.participantes.length>0
-    ?new Set(S.participantes.map(function(p){return p.email.toLowerCase();})).size
-    :0;
-
-  // If no participantes loaded, show what we know from ganadores
-  var pct=totalEmpleados>0?Math.round(ganaron/totalEmpleados*100):0;
-  var nunca=totalEmpleados>0?totalEmpleados-ganaron:0;
-
-  var pctEl=document.getElementById("tasa-pct");
-  var barEl=document.getElementById("tasa-bar");
-  var gEl=document.getElementById("tasa-ganaron");
-  var nEl=document.getElementById("tasa-nunca");
-  var tEl=document.getElementById("tasa-total");
-
-  if(pctEl)pctEl.textContent=totalEmpleados>0?pct+"%":ganaron+" gan.";
-  if(gEl)gEl.textContent=ganaron;
-  if(nEl)nEl.textContent=totalEmpleados>0?nunca:"—";
-  if(tEl)tEl.textContent=totalEmpleados>0?totalEmpleados:""+ganaron+" únicos";
-
-  // Animate bar
-  setTimeout(function(){
-    if(barEl)barEl.style.width=(totalEmpleados>0?pct:Math.min(100,ganaron))+"% ";
-  },100);
-}
-
 function renderLeaderboard(){
   var el=document.getElementById("leaderboard-list");
   if(!el)return;
@@ -3172,6 +3137,7 @@ function renderStep3(){
       const w=S.ganadores.filter(x=>x.email.toLowerCase()===g.email.toLowerCase()).length;
       return `<div class="wr${g._ed?" ed":""}">
         <div class="wr-n">${i+1}</div>
+        <div class="avi">${inic(g.nombre)}</div>
         <div class="wr-info">
           <div class="wr-name">${g.nombre}${g._ed?' <span style="font-size:10px;color:var(--amber)">editado</span>':""}</div>
           <div class="wr-email" style="color:var(--ice2);font-size:11px">✉ ${g.email}${g.dni?" · <span style='color:var(--gray3)'>DNI "+g.dni+"</span>":""}</div>
@@ -3303,7 +3269,7 @@ function filtrarRemp(q){
   let aptos=S.participantes.filter(p=>p.evId===evId&&!ganoPrevio(p,ev)&&!sel.includes(p.email));
   if(q)aptos=aptos.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||p.email.toLowerCase().includes(q.toLowerCase()));
   document.getElementById("remp-list").innerHTML=aptos.length
-    ?aptos.map(p=>`<div class="mli" data-pid="${p.id}" onclick="selRemp(this.dataset.pid)"><div class="mli-n">${p.nombre}</div><div class="mli-e">${p.email}</div></div>`).join("")
+    ?aptos.map(p=>`<div class="mli" data-pid="${p.id}" onclick="selRemp(this.dataset.pid)" style="display:flex;align-items:center;gap:10px"><div class="avi gray">${inic(p.nombre)}</div><div style="flex:1;min-width:0"><div class="mli-n">${p.nombre}</div><div class="mli-e">${p.email}</div></div></div>`).join("")
     :'<div style="text-align:center;color:var(--gray3);padding:18px">Sin resultados</div>';
 }
 function selRemp(pid){
@@ -3325,7 +3291,7 @@ function filtrarAgr(q){
     ?disp.map(p=>{
       const info=ganoPrevioInfo(p,ev);
       const badge=info?`<span class="bic bri" style="font-size:9px" title="${info.fecha?'Ganó el '+fd(info.fecha):info.show}">Ya ganó 🏆</span>`:"";
-      return`<div class="mli" data-pid="${p.id}" onclick="agregarGan(this.dataset.pid)"><div class="mli-n">${p.nombre} ${badge}</div><div class="mli-e">${p.email}</div></div>`;
+      return`<div class="mli" data-pid="${p.id}" onclick="agregarGan(this.dataset.pid)" style="display:flex;align-items:center;gap:10px"><div class="avi gray">${inic(p.nombre)}</div><div style="flex:1;min-width:0"><div class="mli-n">${p.nombre} ${badge}</div><div class="mli-e">${p.email}</div></div></div>`;
     }).join("")
     :'<div style="text-align:center;color:var(--gray3);padding:18px">Sin participantes disponibles</div>';
 }
@@ -3898,6 +3864,7 @@ const v=id=>document.getElementById(id)?.value||"";
 const fd=iso=>{try{return new Date(iso).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})}catch(e){return iso||"—"}};
 const fdL=d=>{if(!d)return"—";try{const clean=parseFecha(d)||d;const dt=new Date(clean+"T12:00:00");if(isNaN(dt)||dt.getFullYear()<1990)return d||"—";return dt.toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"long",year:"numeric"})}catch(e){return d||"—"}};
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const inic=n=>String(n||"?").trim().split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase();
 function toast(msg,type="ok"){const el=document.getElementById("toast");el.className="toast show "+(type==="ok"?"tok":"twn");el.textContent=(type==="ok"?"✓  ":"⚠  ")+msg;setTimeout(()=>el.classList.remove("show"),3000);}
 function closeModal(id){document.getElementById(id).classList.remove("show");}
 

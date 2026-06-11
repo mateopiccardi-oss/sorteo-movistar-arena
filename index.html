@@ -1231,7 +1231,9 @@ let FORM_BASE_URL=localStorage.getItem("form_base_url")||"https://TU-USUARIO.git
 
 async function api(data){
   try{
-    const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});
+    const tok=sessionStorage.getItem("ma_tok");
+    const payload=tok?{...data,token:tok}:data;
+    const r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
     const text=await r.text();
     try{return JSON.parse(text);}
     catch(e){
@@ -3894,22 +3896,29 @@ function toast(msg,type="ok"){const el=document.getElementById("toast");el.class
 function closeModal(id){document.getElementById(id).classList.remove("show");}
 
 // ── AUTH ──────────────────────────────────────────────────
-const _PH="03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+// El PIN se valida contra el servidor (Script Properties) — no hay hash en el código fuente.
 async function _h(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}
 async function checkPin(){
   const inp=document.getElementById("pin-input");
+  const errEl=document.getElementById("pin-error");
   const h=await _h(inp.value);
-  if(h===_PH){
+  inp.disabled=true;
+  errEl.textContent="Verificando…";
+  const res=await api({action:"validarPin",token:h});
+  inp.disabled=false;
+  if(res.ok&&res.valido){
     sessionStorage.setItem("ma_auth","1");
+    sessionStorage.setItem("ma_tok",h);
     const gate=document.getElementById("pin-gate");
     gate.classList.add("out");
     setTimeout(()=>gate.remove(),320);
     startApp();
   }else{
     inp.classList.add("err");
-    document.getElementById("pin-error").textContent="PIN incorrecto";
+    errEl.textContent=res.ok?"PIN incorrecto":"No se pudo verificar — revisá tu conexión";
     inp.value="";
-    setTimeout(()=>{inp.classList.remove("err");document.getElementById("pin-error").textContent="";},1400);
+    inp.focus();
+    setTimeout(()=>{inp.classList.remove("err");errEl.textContent="";},1800);
   }
 }
 // ── SYNC SHOWS DESDE LA NUBE ──────────────────────────────
@@ -4139,7 +4148,7 @@ function startApp(){
   setInterval(pollShowsLight,60000);
 }
 // INIT
-if(sessionStorage.getItem("ma_auth")==="1"){
+if(sessionStorage.getItem("ma_auth")==="1"&&sessionStorage.getItem("ma_tok")){
   document.getElementById("pin-gate").remove();
   startApp();
 }else{

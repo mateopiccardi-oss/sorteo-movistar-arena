@@ -3824,14 +3824,15 @@ async function _enviarMailsCore(nombreCarpeta,ev,pend){
   const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
-  pend.forEach(g=>{g.estado="enviado";});
+  // Marcar localmente solo los confirmados por el backend (si la respuesta no trae la lista, marcar todos)
+  const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
+  pend.forEach(g=>{if(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase()))g.estado="enviado";});
   save();toast(res.mensaje||pend.length+" mails enviados");renderMails();renderDash();
   if(res.errores?.length)setTimeout(()=>alert("Errores:\n"+res.errores.join("\n")),500);
 }
 function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
   const existing=document.getElementById("preflight-modal");
   if(existing)existing.remove();
-  const blocker=(check.status==="no-root"||check.status==="no-entradas");
   let titulo,detalle,color="var(--amber)";
   if(check.status==="no-root"){
     titulo="Falta la carpeta raíz en Drive";
@@ -3852,11 +3853,11 @@ function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
     color="var(--red)";
   } else if(check.status==="insufficient"){
     titulo="PDFs insuficientes";
-    detalle="Necesitás <strong>"+check.expected+"</strong> PDFs ("+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" × "+check.entradasXGan+" entrada"+(check.entradasXGan!==1?"s":"")+") pero hay solo <strong>"+check.found+"</strong> en la carpeta <em>'"+esc(check.folderName||"")+"'</em>.<br>Podés subir más PDFs y reintentar, o enviar igual (los últimos ganadores se quedarán sin adjunto).";
+    detalle="Necesitás <strong>"+check.expected+"</strong> PDFs ("+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" × "+check.entradasXGan+" entrada"+(check.entradasXGan!==1?"s":"")+") pero hay solo <strong>"+check.found+"</strong> en la carpeta <em>'"+esc(check.folderName||"")+"'</em>.<br>Subí los PDFs que faltan y reintentá.";
+    color="var(--red)";
   }
-  const acciones=blocker
-    ? '<button class="btn bo" onclick="document.getElementById(\'preflight-modal\').remove()">Cerrar</button>'
-    : '<button class="btn bo" onclick="document.getElementById(\'preflight-modal\').remove()">Cancelar</button><button class="btn br" id="btn-pf-force">Enviar igual</button>';
+  // El backend rechaza envíos con PDFs insuficientes — no existe "enviar igual"
+  const acciones='<button class="btn bo" onclick="document.getElementById(\'preflight-modal\').remove()">Cerrar</button>';
   const modal=document.createElement("div");
   modal.id="preflight-modal";
   modal.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:rgba(9,14,26,0.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)";
@@ -3871,12 +3872,6 @@ function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
     </div>`;
   modal.addEventListener("click",e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
-  if(!blocker){
-    document.getElementById("btn-pf-force").addEventListener("click",async()=>{
-      modal.remove();
-      await _enviarMailsCore(nombreCarpeta,ev,pend);
-    });
-  }
 }
 function toggleEnv(id){
   const g=S.ganadores.find(x=>String(x.id)===String(id));

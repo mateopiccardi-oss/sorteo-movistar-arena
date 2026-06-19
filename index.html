@@ -3311,7 +3311,8 @@ async function confirmarGanadores(){
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
-    estado:"pendiente", fechaGano:new Date().toISOString()
+    estado:"pendiente", fechaGano:new Date().toISOString(),
+    _synced:false
   }));
   S.sorteo={evId:null,lista:[]};
   save();
@@ -3336,8 +3337,8 @@ async function confirmarGanadores(){
     // para que drawTickets() no los cuente doble respecto a B123
     const n=ev.entradasXGan||1;
     lista.forEach(g=>{
-      const localG=S.ganadores.find(x=>x.evId===evId&&x.nombre===g.nombre&&!x._historico);
-      if(localG)localG._historico=true;
+      const localG=S.ganadores.find(x=>x.evId===evId&&x.nombre===g.nombre&&x._synced===false);
+      if(localG){localG._historico=true;localG._synced=true;}
     });
     S.ticketsBase=(S.ticketsBase||0)+lista.length*n;
     save();

@@ -2529,8 +2529,12 @@ async function importarDesdeTracking(silente){
             _historico:true
           });
           totalGan++;
-        } else if(!existingGan._historico){
+        } else {
+          // Matcheó contra datos de Sheets → este ganador SÍ está en la planilla:
+          // marcar histórico y limpiar el flag "sin sincronizar" (cubre el caso de
+          // un ack perdido donde quedó _synced:false local pero el write sí entró).
           existingGan._historico=true;
+          existingGan._synced=true;
         }
       });
     });
@@ -3642,7 +3646,9 @@ async function reintentarSync(evId){
     toast("⚠ Sigue fallando la sincronización: "+errores[0],"warn");
     return;
   }
+  const n=ev.entradasXGan||1;
   pend.forEach(g=>{g._synced=true;g._historico=true;});
+  S.ticketsBase=(S.ticketsBase||0)+pend.length*n;
   save();
   toast("✓ "+pend.length+" ganador(es) sincronizado(s) con Sheets");
   renderGanConf();renderMails();renderDash();

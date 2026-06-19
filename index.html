@@ -3775,32 +3775,49 @@ async function enviarGmail(){
   const evId=S.evActivo;
   const ev=S.eventos.find(e=>e.id===evId);
   const pend=S.ganadores.filter(g=>g.evId===evId&&g.estado==="pendiente");
-  if(!pend.length){toast("No hay pendientes","warn");return;}
-  const nombreCarpeta=ev?.nombre||evId;
+  if(!pend.length){
+    const totalEv=S.ganadores.filter(g=>g.evId===evId).length;
+    if(!totalEv){
+      toast("Este show todavía no tiene ganadores sorteados.","warn");
+    } else {
+      toast("Ya enviaste las entradas a los "+totalEv+" ganadores de este show.");
+    }
+    return;
+  }
+  // showKey: clave canónica con la que se ESCRIBEN los ganadores (ev.id) — la usa el backend
+  // para matchear filas. showName: nombre para la carpeta de Drive y los textos de la UI.
+  const showKey=ev?.id||evId;
+  const showName=ev?.nombre||evId;
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="🔎 Verificando PDFs en Drive…";
   const check=await api({
     action:"checkPDFs",
-    showId:String(nombreCarpeta),
-    showNombre:nombreCarpeta,
+    showId:String(showKey),
+    showNombre:showName,
     entradasXGan:ev?.entradasXGan||1,
     pendCount:pend.length
   });
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!check.ok){toast("Error verificando PDFs: "+(check.error||""),"warn");return;}
   if(check.status!=="ok"){
-    mostrarPreflightPDFs(check,pend,ev,nombreCarpeta);
+    mostrarPreflightPDFs(check,pend,ev,showName);
     return;
   }
-  if(!confirm("✓ Verificado: "+check.found+" PDF(s) en Drive (necesarios: "+check.expected+").\n\n¿Enviar mails a "+pend.length+" ganador(es) de \""+nombreCarpeta+"\"?"))return;
-  await _enviarMailsCore(nombreCarpeta,ev,pend);
+  if(!confirm("✓ Verificado: "+check.found+" PDF(s) en Drive (necesarios: "+check.expected+").\n\n¿Enviar mails a "+pend.length+" ganador(es) de \""+showName+"\"?"))return;
+  await _enviarMailsCore(showKey,showName,ev,pend);
 }
-async function _enviarMailsCore(nombreCarpeta,ev,pend){
+async function _enviarMailsCore(showKey,showName,ev,pend){
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="⏳ Enviando…";
-  const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
+  const res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
+  // Desincronización: esperábamos mandar (pend>0) pero la planilla no devolvió ningún
+  // pendiente y no hubo errores de envío → las filas no están en Sheets para este show.
+  if(res.enviados===0 && !(res.errores&&res.errores.length) && pend.length>0){
+    alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
+    return;
+  }
   // Marcar localmente solo los confirmados por el backend (si la respuesta no trae la lista, marcar todos)
   const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
   pend.forEach(g=>{if(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase()))g.estado="enviado";});

@@ -3809,6 +3809,12 @@ async function _enviarMailsCore(nombreCarpeta,ev,pend){
   const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
+  // Desincronización: esperábamos mandar (pend>0) pero la planilla no devolvió ningún
+  // pendiente y no hubo errores de envío → las filas no están en Sheets para este show.
+  if(res.enviados===0 && !(res.errores&&res.errores.length) && pend.length>0){
+    alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
+    return;
+  }
   // Marcar localmente solo los confirmados por el backend (si la respuesta no trae la lista, marcar todos)
   const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
   pend.forEach(g=>{if(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase()))g.estado="enviado";});

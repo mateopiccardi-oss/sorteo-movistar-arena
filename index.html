@@ -3775,7 +3775,15 @@ async function enviarGmail(){
   const evId=S.evActivo;
   const ev=S.eventos.find(e=>e.id===evId);
   const pend=S.ganadores.filter(g=>g.evId===evId&&g.estado==="pendiente");
-  if(!pend.length){toast("No hay pendientes","warn");return;}
+  if(!pend.length){
+    const totalEv=S.ganadores.filter(g=>g.evId===evId).length;
+    if(!totalEv){
+      toast("Este show todavía no tiene ganadores sorteados.","warn");
+    } else {
+      toast("Ya enviaste las entradas a los "+totalEv+" ganadores de este show.");
+    }
+    return;
+  }
   const nombreCarpeta=ev?.nombre||evId;
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="🔎 Verificando PDFs en Drive…";

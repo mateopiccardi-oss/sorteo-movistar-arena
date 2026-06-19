@@ -2466,10 +2466,12 @@ async function importarDesdeTracking(silente){
       return;
     }
 
-    // Rebuild ganadores entirely from Sheets. Non-historico local ganadores are safe to
-    // discard because confirmarGanadores() marks them _historico right after a successful
-    // Sheets sync; any that remain non-historico are stale/garbage data.
-    S.ganadores=[];
+    // Rebuild ganadores from Sheets, PERO preservando los locales no sincronizados:
+    // un ganador con _synced===false nunca llegó a Sheets, así que el rebuild lo borraría
+    // para siempre (este fue el bug de Angela Leiva). Los conservamos para que el banner
+    // de "sin sincronizar" siga ofreciendo reintentar.
+    const _noSync=S.ganadores.filter(function(g){return g._synced===false;});
+    S.ganadores=_noSync.slice();
     S.eventos=S.eventos.filter(function(e){return !e._fromTracking;});
 
     let totalGan=0;

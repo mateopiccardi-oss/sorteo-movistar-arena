@@ -3784,29 +3784,32 @@ async function enviarGmail(){
     }
     return;
   }
-  const nombreCarpeta=ev?.nombre||evId;
+  // showKey: clave canónica con la que se ESCRIBEN los ganadores (ev.id) — la usa el backend
+  // para matchear filas. showName: nombre para la carpeta de Drive y los textos de la UI.
+  const showKey=ev?.id||evId;
+  const showName=ev?.nombre||evId;
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="🔎 Verificando PDFs en Drive…";
   const check=await api({
     action:"checkPDFs",
-    showId:String(nombreCarpeta),
-    showNombre:nombreCarpeta,
+    showId:String(showKey),
+    showNombre:showName,
     entradasXGan:ev?.entradasXGan||1,
     pendCount:pend.length
   });
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!check.ok){toast("Error verificando PDFs: "+(check.error||""),"warn");return;}
   if(check.status!=="ok"){
-    mostrarPreflightPDFs(check,pend,ev,nombreCarpeta);
+    mostrarPreflightPDFs(check,pend,ev,showName);
     return;
   }
-  if(!confirm("✓ Verificado: "+check.found+" PDF(s) en Drive (necesarios: "+check.expected+").\n\n¿Enviar mails a "+pend.length+" ganador(es) de \""+nombreCarpeta+"\"?"))return;
-  await _enviarMailsCore(nombreCarpeta,ev,pend);
+  if(!confirm("✓ Verificado: "+check.found+" PDF(s) en Drive (necesarios: "+check.expected+").\n\n¿Enviar mails a "+pend.length+" ganador(es) de \""+showName+"\"?"))return;
+  await _enviarMailsCore(showKey,showName,ev,pend);
 }
-async function _enviarMailsCore(nombreCarpeta,ev,pend){
+async function _enviarMailsCore(showKey,showName,ev,pend){
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;btn.textContent="⏳ Enviando…";
-  const res=await api({action:"enviarMails",showId:String(nombreCarpeta),entradasXGan:ev?.entradasXGan||1});
+  const res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
   btn.disabled=false;btn.textContent="Enviar via Gmail";
   if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
   // Desincronización: esperábamos mandar (pend>0) pero la planilla no devolvió ningún

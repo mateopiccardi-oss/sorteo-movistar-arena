@@ -2466,10 +2466,12 @@ async function importarDesdeTracking(silente){
       return;
     }
 
-    // Rebuild ganadores entirely from Sheets. Non-historico local ganadores are safe to
-    // discard because confirmarGanadores() marks them _historico right after a successful
-    // Sheets sync; any that remain non-historico are stale/garbage data.
-    S.ganadores=[];
+    // Rebuild ganadores from Sheets, PERO preservando los locales no sincronizados:
+    // un ganador con _synced===false nunca llegó a Sheets, así que el rebuild lo borraría
+    // para siempre (este fue el bug de Angela Leiva). Los conservamos para que el banner
+    // de "sin sincronizar" siga ofreciendo reintentar.
+    const _noSync=S.ganadores.filter(function(g){return g._synced===false;});
+    S.ganadores=_noSync.slice();
     S.eventos=S.eventos.filter(function(e){return !e._fromTracking;});
 
     let totalGan=0;
@@ -2527,8 +2529,12 @@ async function importarDesdeTracking(silente){
             _historico:true
           });
           totalGan++;
-        } else if(!existingGan._historico){
+        } else {
+          // Matcheó contra datos de Sheets → este ganador SÍ está en la planilla:
+          // marcar histórico y limpiar el flag "sin sincronizar" (cubre el caso de
+          // un ack perdido donde quedó _synced:false local pero el write sí entró).
           existingGan._historico=true;
+          existingGan._synced=true;
         }
       });
     });
@@ -3311,7 +3317,8 @@ async function confirmarGanadores(){
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
-    estado:"pendiente", fechaGano:new Date().toISOString()
+    estado:"pendiente", fechaGano:new Date().toISOString(),
+    _synced:false
   }));
   S.sorteo={evId:null,lista:[]};
   save();
@@ -3329,15 +3336,16 @@ async function confirmarGanadores(){
     .filter(r=>r.status==="rejected")
     .map(r=>r.reason?.message||"Error desconocido");
   if(errores.length){
-    toast("⚠ Error al sincronizar Sheets: "+errores[0],"warn");
+    toast("⚠ No se pudo sincronizar con Sheets — quedó pendiente de reintento","warn");
     console.error("Sheets sync errors:",errores);
+    renderGanConf();renderMails();
   } else {
     // Tracking guardado: marcar ganadores como _historico y sumar a ticketsBase
     // para que drawTickets() no los cuente doble respecto a B123
     const n=ev.entradasXGan||1;
     lista.forEach(g=>{
-      const localG=S.ganadores.find(x=>x.evId===evId&&x.nombre===g.nombre&&!x._historico);
-      if(localG)localG._historico=true;
+      const localG=S.ganadores.find(x=>x.evId===evId&&x.nombre===g.nombre&&x._synced===false);
+      if(localG){localG._historico=true;localG._synced=true;}
     });
     S.ticketsBase=(S.ticketsBase||0)+lista.length*n;
     save();
@@ -3595,8 +3603,59 @@ async function trackingEnSheets(lista,ev){
   if(!res.ok)throw new Error(res.error||"Error en trackingGanadores");
   return res;
 }
+// Banner persistente: ganadores confirmados localmente pero NO escritos en Sheets.
+// Reemplaza al toast efímero — el riesgo queda visible hasta resolverse.
+function unsyncedDelEvento(evId){
+  return S.ganadores.filter(g=>g.evId===evId&&g._synced===false);
+}
+function renderSyncBanner(anchorId){
+  const anchor=document.getElementById(anchorId);
+  if(!anchor||!anchor.parentNode)return;
+  const bid="sync-banner-"+anchorId;
+  let banner=document.getElementById(bid);
+  const evId=S.evActivo;
+  const pend=evId?unsyncedDelEvento(evId):[];
+  if(!pend.length){if(banner)banner.remove();return;}
+  if(!banner){
+    banner=document.createElement("div");
+    banner.id=bid;
+    banner.style.cssText="display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:12px;border-radius:10px;background:rgba(255,176,32,0.10);border:1px solid rgba(255,176,32,0.45)";
+    anchor.parentNode.insertBefore(banner,anchor);
+  }
+  banner.innerHTML=
+    '<div style="font-size:18px">⚠</div>'+
+    '<div style="flex:1;font-size:12px;color:var(--white);line-height:1.4">'+
+      '<strong>'+pend.length+' ganador'+(pend.length!==1?'es':'')+' sin sincronizar con Sheets.</strong> '+
+      'No se escribieron en la planilla, así que <strong>no se les puede enviar</strong> hasta sincronizar.'+
+    '</div>'+
+    '<button class="btn bp bsm btn-reintentar">Reintentar</button>';
+  const btn=banner.querySelector(".btn-reintentar");
+  if(btn)btn.onclick=()=>reintentarSync(evId);
+}
+async function reintentarSync(evId){
+  const ev=S.eventos.find(e=>e.id===evId);
+  const pend=unsyncedDelEvento(evId);
+  if(!ev||!pend.length){toast("No hay ganadores sin sincronizar","warn");return;}
+  const btns=document.querySelectorAll(".btn-reintentar");
+  btns.forEach(b=>{b.disabled=true;b.textContent="Sincronizando…";});
+  const lista=pend.map(g=>({nombre:g.nombre,email:g.email}));
+  const resultados=await Promise.allSettled([guardarEnSheets(lista,ev),trackingEnSheets(lista,ev)]);
+  const errores=resultados.filter(r=>r.status==="rejected").map(r=>r.reason?.message||"Error desconocido");
+  if(errores.length){
+    btns.forEach(b=>{b.disabled=false;b.textContent="Reintentar";});
+    toast("⚠ Sigue fallando la sincronización: "+errores[0],"warn");
+    return;
+  }
+  const n=ev.entradasXGan||1;
+  pend.forEach(g=>{g._synced=true;g._historico=true;});
+  S.ticketsBase=(S.ticketsBase||0)+pend.length*n;
+  save();
+  toast("✓ "+pend.length+" ganador(es) sincronizado(s) con Sheets");
+  renderGanConf();renderMails();renderDash();
+}
 const _ganExp=new Set();
 function renderGanConf(){
+  renderSyncBanner("gan-conf-list");
   const q=(document.getElementById("gan-search")?.value||"").toLowerCase();
   const evId=S.evActivo;
   let gans=S.ganadores.filter(g=>g.evId===evId);
@@ -3682,6 +3741,7 @@ function renderStep4(){
 }
 
 function renderMails(){
+  renderSyncBanner("mail-send-banner");
   const evId=S.evActivo;
   const ev=S.eventos.find(e=>e.id===evId);
   const gans=S.ganadores.filter(g=>g.evId===evId);

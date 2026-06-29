@@ -1235,6 +1235,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
 <div class="toast" id="toast"></div>
 <div id="save-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;padding:10px 16px;background:#c0392b;color:#fff;font-size:13px;font-weight:600;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4)">⚠ No se pudo guardar localmente. No cierres la pestaña hasta que se solucione.</div>
+<div id="hist-block-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:10px 16px;background:#b9770e;color:#fff;font-size:13px;font-weight:600;text-align:center">⚠ No se pudieron cargar los ganadores históricos — el anti-repetidos no funciona. <button onclick="reintentarHistoricos()" style="margin-left:10px;padding:4px 12px;border:1px solid #fff;background:transparent;color:#fff;border-radius:6px;cursor:pointer;font-weight:700">Reintentar</button></div>
 
 <script>
 const SCRIPT_URL="https://script.google.com/a/macros/movistararena.com.ar/s/AKfycby_KOpMJOKKZSr22ig0j4w-CWVu88z5ghSHzBQqxqOSEQAGj238dhsaSKQr6Pv_tddDaQ/exec";
@@ -1262,6 +1263,17 @@ const S={eventos:[],participantes:[],ganadores:[],colaboradores:[],sorteo:{evId:
 let _mailPreviewTimer=null;
 let _autoSyncTimer=null;
 let _lastAutoSync=null;
+let _historicosCargados=false;
+function reintentarHistoricos(){importarDesdeTracking(false);}
+function refreshSortGate(){
+  const ev=S.eventos.find(e=>e.id===S.evActivo);
+  const needHist=ev&&ev.antiRep!==false;
+  const blocked=needHist&&!_historicosCargados;
+  const btn=document.getElementById("btn-sort");
+  const banner=document.getElementById("hist-block-banner");
+  if(btn)btn.disabled=blocked;
+  if(banner)banner.style.display=blocked?"block":"none";
+}
 function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{
   try{
@@ -2458,14 +2470,17 @@ async function importarDesdeTracking(silente){
   const btn=document.getElementById("btn-import-tracking");
   if(btn){btn.disabled=true;btn.textContent="⬇ Importando...";}
   try{
+    _historicosCargados=false;
     const res=await api({action:"leerTracking"});
     if(!res.ok){
       if(!silente)toast("Error: "+(res.error||"sin respuesta"),"warn");
+      refreshSortGate();
       return;
     }
     const cols=res.columnas||[];
     if(!cols.length){
       if(!silente)toast("No hay datos en Tracking Ganadores","warn");
+      refreshSortGate();
       return;
     }
 
@@ -2541,11 +2556,14 @@ async function importarDesdeTracking(silente){
     if(res.config)Object.assign(S.config,res.config);
     if(res.schedules)Object.assign(S.schedules,res.schedules);
     save();
+    _historicosCargados=true;
+    refreshSortGate();
     if(!silente)toast(totalGan+" ganadores importados de "+cols.length+" shows");
     else if(totalGan>0)toast("Sync: "+totalGan+" ganadores cargados");
     renderDash();
   }catch(e){
     toast("Error: "+e.message,"warn");
+    refreshSortGate();
   }finally{
     if(btn){btn.disabled=false;btn.textContent="⬇ Importar Tracking";}
   }
@@ -3031,6 +3049,7 @@ function renderStep2(){
     document.getElementById("drum").classList.remove("spin");
     document.getElementById("drum-sub").textContent="Listo para sortear";
   }
+  refreshSortGate();
 }
 function spawnSparks(wrap){
   const rect=wrap.getBoundingClientRect();
@@ -3049,6 +3068,11 @@ function spawnSparks(wrap){
 function ejecutarSorteo(){
   const ev=S.eventos.find(e=>e.id===S.evActivo);
   if(!ev)return;
+  if(ev.antiRep!==false && !_historicosCargados){
+    refreshSortGate();
+    toast("No se pudieron cargar los históricos — el anti-repetidos no funciona. Reintentá.","warn");
+    return;
+  }
   const aptos=S.participantes.filter(p=>p.evId===S.evActivo&&!ganoPrevio(p,ev));
   if(!aptos.length)return;
   document.getElementById("btn-sort").disabled=true;

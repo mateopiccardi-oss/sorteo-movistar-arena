@@ -1271,8 +1271,11 @@ function refreshSortGate(){
   const blocked=needHist&&!_historicosCargados;
   const btn=document.getElementById("btn-sort");
   const banner=document.getElementById("hist-block-banner");
-  if(btn)btn.disabled=blocked;
   if(banner)banner.style.display=blocked?"block":"none";
+  if(btn){
+    if(blocked){btn.disabled=true;}
+    else{const aptos=ev?S.participantes.filter(p=>p.evId===S.evActivo&&!ganoPrevio(p,ev)).length:0;btn.disabled=aptos===0;}
+  }
 }
 function _debounceMailPreview(){clearTimeout(_mailPreviewTimer);_mailPreviewTimer=setTimeout(renderMails,250);}
 const save=()=>{

@@ -1234,6 +1234,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="save-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;padding:10px 16px;background:#c0392b;color:#fff;font-size:13px;font-weight:600;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4)">⚠ No se pudo guardar localmente. No cierres la pestaña hasta que se solucione.</div>
 
 <script>
 const SCRIPT_URL="https://script.google.com/a/macros/movistararena.com.ar/s/AKfycby_KOpMJOKKZSr22ig0j4w-CWVu88z5ghSHzBQqxqOSEQAGj238dhsaSKQr6Pv_tddDaQ/exec";
@@ -1277,8 +1278,10 @@ const save=()=>{
       schedules:S.schedules||{},
     };
     localStorage.setItem("ma_v6",JSON.stringify(toSave));
+    clearSaveError();
   }catch(e){
     console.warn("localStorage save error:",e);
+    showSaveError();
   }
 };
 const load=()=>{
@@ -3883,6 +3886,8 @@ const fdL=d=>{if(!d)return"—";try{const clean=parseFecha(d)||d;const dt=new Da
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const inic=n=>String(n||"?").trim().split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase();
 function toast(msg,type="ok"){const el=document.getElementById("toast");el.className="toast show "+(type==="ok"?"tok":"twn");el.textContent=(type==="ok"?"✓  ":"⚠  ")+msg;setTimeout(()=>el.classList.remove("show"),3000);}
+function showSaveError(){const b=document.getElementById("save-error-banner");if(b)b.style.display="block";}
+function clearSaveError(){const b=document.getElementById("save-error-banner");if(b)b.style.display="none";}
 function closeModal(id){document.getElementById(id).classList.remove("show");}
 
 // ── AUTH ──────────────────────────────────────────────────

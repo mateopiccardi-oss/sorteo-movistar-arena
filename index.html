@@ -1268,7 +1268,7 @@ const save=()=>{
     // Only persist eventos, ganadores, sorteo state, evActivo
     const toSave={
       eventos:S.eventos,
-      ganadores:S.ganadores,
+      ganadores:S.ganadores.filter(g=>!g._historico),
       colaboradores:S.colaboradores||[],
       sorteo:S.sorteo,
       evActivo:S.evActivo,

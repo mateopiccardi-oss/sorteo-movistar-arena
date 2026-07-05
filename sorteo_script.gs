@@ -362,7 +362,7 @@ function _enviarMailsLocked(showId, entradasXGan) {
     }
   }
 
-  if (!ganadores.length) return { ok: true, enviados: 0, enviadosMails: [], restantes: 0, mensaje: "No hay ganadores pendientes" };
+  if (!ganadores.length) return { ok: true, enviados: 0, enviadosMails: [], errores: [], restantes: 0, mensaje: "No hay ganadores pendientes" };
 
   // Buscar PDFs y descartar los ya asignados en cualquier fila del show
   const usados = _pdfsUsadosDelShow(datos, showId);

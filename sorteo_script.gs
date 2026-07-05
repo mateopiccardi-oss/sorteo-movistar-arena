@@ -101,6 +101,8 @@ function doPost(e) {
       case "inscribir":         return resp(inscribir(body.mail, body.showId, body.showNombre, body.fecha));
       case "getInscriptos":     return resp(getInscriptos(body.showId));
       case "guardarGanadores":  return resp(guardarGanadores(body.ganadores, body.showId, body.showNombre, body.fecha, body.venue));
+      case "actualizarEntradas": return resp(actualizarEntradas(body.showId, body.mail, body.entradas, body.entradasPrev));
+      case "getGanadoresShow":   return resp(getGanadoresShow(body.showId));
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
       case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
@@ -291,6 +293,77 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
   });
 
   return { ok: true, mensaje: `${ganadores.length} ganadores guardados` };
+}
+
+// ============================================================
+//  ACTUALIZAR ENTRADAS — edita la cantidad de un ganador Pendiente
+//  Ajusta B123 (total historico de tickets) por el delta para que
+//  el total del dashboard no quede desfasado tras la edicion.
+// ============================================================
+function actualizarEntradas(showId, mail, entradas, entradasPrev) {
+  if (!showId || !mail) return { ok: false, error: "showId y mail requeridos" };
+  var n = parseInt(entradas);
+  if (isNaN(n) || n < 1 || n > 10) return { ok: false, error: "Cantidad inválida (1 a 10)" };
+
+  var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  var hoja = ss.getSheetByName("Ganadores");
+  if (!hoja) return { ok: false, error: "No existe la pestaña Ganadores" };
+
+  var datos = hoja.getDataRange().getValues();
+  var m = String(mail).trim().toLowerCase();
+
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() === String(showId).trim() &&
+        String(datos[i][5]).trim().toLowerCase() === m &&
+        String(datos[i][7]).trim() === "Pendiente") {
+
+      var oldCell = parseInt(datos[i][9]);
+      var old = (!isNaN(oldCell) && oldCell > 0) ? oldCell : (parseInt(entradasPrev) || null);
+
+      hoja.getRange(i + 1, 10).setValue(n);
+
+      var delta = 0;
+      if (old !== null && old !== n) {
+        delta = n - old;
+        try {
+          var tr = ss.getSheetByName("Tracking Ganadores");
+          var valB = tr.getRange("B123").getValue();
+          var base = (valB && !isNaN(Number(valB))) ? parseInt(valB) : 0;
+          tr.getRange("B123").setValue(base + delta);
+        } catch (e2) {
+          Logger.log("actualizarEntradas: no se pudo ajustar B123: " + e2.message);
+          delta = 0;
+        }
+      }
+      return { ok: true, entradas: n, deltaTickets: delta };
+    }
+  }
+  return { ok: false, error: "No hay fila Pendiente para ese ganador en este show (¿ya se envió?)" };
+}
+
+// ============================================================
+//  GET GANADORES SHOW — filas de la pestaña Ganadores de un show
+//  La app lo usa para hidratar cantidades al recargar (multi-compu).
+// ============================================================
+function getGanadoresShow(showId) {
+  if (!showId) return { ok: false, error: "Show ID requerido" };
+  var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  var hoja = ss.getSheetByName("Ganadores");
+  if (!hoja) return { ok: true, ganadores: [] };
+
+  var datos = hoja.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() !== String(showId).trim()) continue;
+    var ent = parseInt(datos[i][9]);
+    out.push({
+      mail: String(datos[i][5]).trim(),
+      nombre: String(datos[i][6]).trim(),
+      estado: String(datos[i][7]).trim(),
+      entradas: (isNaN(ent) || ent < 1 || ent > 10) ? null : ent
+    });
+  }
+  return { ok: true, ganadores: out };
 }
 
 // ============================================================

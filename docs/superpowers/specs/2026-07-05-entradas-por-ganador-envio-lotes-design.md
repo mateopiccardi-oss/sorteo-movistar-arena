@@ -130,7 +130,7 @@ Checklist a ejecutar con el segundo usuario al cerrar la implementación:
 
 ## Despliegue
 
-1. Actualizar `sorteo_script.gs` y crear **nueva implementación** manteniendo **"Ejecutar como: Yo" + "Cualquier persona"** (¡no cambiar el modo!).
+1. Actualizar `sorteo_script.gs` y publicar **nueva versión de la implementación existente** (Implementar → Administrar implementaciones → editar → Nueva versión), manteniendo **"Ejecutar como: Yo" + "Cualquier persona"** y la misma URL (¡no crear una implementación nueva ni cambiar el modo!).
 2. Frontend: push a GitHub Pages (admin). No toca el formulario público ni Netlify.
 3. Orden seguro: backend primero (retro-compatible: sin col J usa fallback), frontend después.
 

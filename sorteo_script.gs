@@ -106,7 +106,7 @@ function doPost(e) {
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
       case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
-      case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha));
+      case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha, body.entradasXGan));
       case "leerTracking":           return resp(leerTracking());
       case "getUltimasVictorias":    return resp(getUltimasVictorias(body.nombres));
       case "getShows":               return resp(getShows());
@@ -885,7 +885,10 @@ function trackingGanadores(ganadores, showNombre, fecha, entradasXGan) {
 
     // Auto-increment B123 (ticketsBase) so the app stays in sync without manual updates
     var n = parseInt(entradasXGan) || 1;
-    var ticketsAdded = ganadores.length * n;
+    var ticketsAdded = ganadores.reduce(function(acc, g) {
+      var e = parseInt(g.entradas);
+      return acc + ((isNaN(e) || e < 1 || e > 10) ? n : e);
+    }, 0);
     try {
       var valB123 = hoja.getRange("B123").getValue();
       var currentBase = (valB123 && !isNaN(Number(valB123))) ? parseInt(valB123) : 0;

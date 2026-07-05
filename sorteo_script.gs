@@ -264,13 +264,18 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
 
   if (!hoja) {
     hoja = ss.insertSheet("Ganadores");
-    hoja.appendRow(["Timestamp", "Show ID", "Show", "Fecha Show", "Venue", "Mail", "Nombre", "Estado Mail", "PDF enviado"]);
-    hoja.getRange(1, 1, 1, 9).setFontWeight("bold");
+    hoja.appendRow(["Timestamp", "Show ID", "Show", "Fecha Show", "Venue", "Mail", "Nombre", "Estado Mail", "PDF enviado", "Entradas"]);
+    hoja.getRange(1, 1, 1, 10).setFontWeight("bold");
+  }
+  // Migración lazy: hojas creadas antes de la col "Entradas"
+  if (!String(hoja.getRange(1, 10).getValue()).trim()) {
+    hoja.getRange(1, 10).setValue("Entradas").setFontWeight("bold");
   }
 
   const fecha_reg = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 
   ganadores.forEach(g => {
+    const ent = parseInt(g.entradas);
     hoja.appendRow([
       new Date(),
       showId,
@@ -280,7 +285,8 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
       g.mail || g.email,
       g.nombre,
       "Pendiente",
-      ""
+      "",
+      (isNaN(ent) || ent < 1) ? "" : ent
     ]);
   });
 

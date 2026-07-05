@@ -1865,8 +1865,7 @@ function drawTickets(){
   // Count tickets: entradasXGan per ganador
   let totalEnv=0,totalPend=0;
   gans.forEach(g=>{
-    const ev=S.eventos.find(e=>e.id===g.evId);
-    const n=ev?.entradasXGan||1;
+    const n=entradasDe(g);
     if(g.estado==="enviado")totalEnv+=n;
     else totalPend+=n;
   });
@@ -2231,8 +2230,7 @@ function drawTickets(){
   var totalEnv=0,totalPend=0;
   S.ganadores.forEach(function(g){
     if(g._historico)return; // Skip historical ganadores - already counted in base
-    var ev=S.eventos.find(function(e){return e.id===g.evId;});
-    var n=ev&&ev.entradasXGan?ev.entradasXGan:1;
+    var n=entradasDe(g);
     if(g.estado==="enviado")totalEnv+=n;
     else totalPend+=n;
   });
@@ -2671,8 +2669,8 @@ function renderDash(){
   const totalEv=S.eventos.length;
   const totalPart=S.participantes.length;
   const totalGan=S.ganadores.length;
-  const totalTick=S.ganadores.reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
-  const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
+  const totalTick=S.ganadores.reduce((acc,g)=>acc+entradasDe(g),0);
+  const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>acc+entradasDe(g),0);
   animateStat("ds-ev",totalEv);
   animateStat("ds-part",totalPart);
   animateStat("ds-gan",totalGan);
@@ -3908,6 +3906,12 @@ function copiar(bid,btn){
 
 // HISTORIAL
 // UTILS
+function entradasDe(g){
+  const n=parseInt(g.entradas);
+  if(!isNaN(n)&&n>0&&n<=10)return n;
+  const ev=S.eventos.find(e=>e.id===g.evId);
+  return ev?.entradasXGan||1;
+}
 const v=id=>document.getElementById(id)?.value||"";
 const fd=iso=>{try{return new Date(iso).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})}catch(e){return iso||"—"}};
 const fdL=d=>{if(!d)return"—";try{const clean=parseFecha(d)||d;const dt=new Date(clean+"T12:00:00");if(isNaN(dt)||dt.getFullYear()<1990)return d||"—";return dt.toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"long",year:"numeric"})}catch(e){return d||"—"}};

@@ -494,6 +494,26 @@ function checkPDFs(showId, showNombre, entradasXGan, pendCount) {
   var expected = pc * epg;
   var buscar = showNombre || showId;
 
+  // Fuente de verdad: filas Pendiente de la pestaña Ganadores (suma de col J).
+  // Si no hay filas para el show, cae al cálculo viejo pc*epg (p.ej. desincronización).
+  var usados = {};
+  try {
+    var hojaG = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID).getSheetByName("Ganadores");
+    if (hojaG) {
+      var datosG = hojaG.getDataRange().getValues();
+      usados = _pdfsUsadosDelShow(datosG, showId);
+      var sumaEnt = 0, filasPend = 0;
+      for (var gi = 1; gi < datosG.length; gi++) {
+        if (String(datosG[gi][1]).trim() === String(showId).trim() && String(datosG[gi][7]).trim() === "Pendiente") {
+          filasPend++;
+          var entG = parseInt(datosG[gi][9]);
+          sumaEnt += (isNaN(entG) || entG < 1 || entG > 10) ? epg : entG;
+        }
+      }
+      if (filasPend > 0) { expected = sumaEnt; pc = filasPend; }
+    }
+  } catch (eG) {}
+
   try {
     var raizIter = DriveApp.getFoldersByName("Sorteo Movistar Arena");
     if (!raizIter.hasNext()) {
@@ -551,16 +571,17 @@ function checkPDFs(showId, showNombre, entradasXGan, pendCount) {
       }
     }
     pdfs.sort();
+    var disponibles = pdfs.filter(function(nom) { return !usados[nom]; });
 
     return {
       ok: true,
-      status: pdfs.length >= expected ? "ok" : "insufficient",
+      status: disponibles.length >= expected ? "ok" : "insufficient",
       expected: expected,
-      found: pdfs.length,
+      found: disponibles.length,
       pendCount: pc,
       entradasXGan: epg,
       folderName: carpetaShow.getName(),
-      pdfNames: pdfs.slice(0, 20)
+      pdfNames: disponibles.slice(0, 20)
     };
   } catch (e) {
     return { ok: false, error: "Error en checkPDFs: " + e.message };

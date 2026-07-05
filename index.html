@@ -3341,6 +3341,7 @@ async function confirmarGanadores(){
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
+    entradas:ev.entradasXGan||1,
     estado:"pendiente", fechaGano:new Date().toISOString()
   }));
   S.sorteo={evId:null,lista:[]};
@@ -3609,7 +3610,7 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 async function guardarEnSheets(lista,ev){
-  const res=await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
+  const res=await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre,entradas:ev.entradasXGan||1})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
   if(!res.ok)throw new Error(res.error||"Error en guardarGanadores");
   return res;
 }
@@ -3617,7 +3618,7 @@ async function trackingEnSheets(lista,ev){
   const fmtCorta=d=>{try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
   const res=await api({
     action:"trackingGanadores",
-    ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email})),
+    ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email,entradas:ev.entradasXGan||1})),
     showNombre:ev.show||ev.nombre,
     fecha:fmtCorta(ev.fecha),
     entradasXGan:ev.entradasXGan||1

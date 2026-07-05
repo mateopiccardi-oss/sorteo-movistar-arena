@@ -286,7 +286,7 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
       g.nombre,
       "Pendiente",
       "",
-      (isNaN(ent) || ent < 1) ? "" : ent
+      (isNaN(ent) || ent < 1 || ent > 10) ? "" : ent
     ]);
   });
 

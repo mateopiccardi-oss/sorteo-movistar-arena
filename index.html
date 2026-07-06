@@ -1284,7 +1284,7 @@ const save=()=>{
     // Only persist eventos, ganadores, sorteo state, evActivo
     const toSave={
       eventos:S.eventos,
-      ganadores:S.ganadores.filter(g=>!g._historico),
+      ganadores:S.ganadores.filter(g=>!g._historico).map(g=>{const{_entPrev,...rest}=g;return rest;}),
       colaboradores:S.colaboradores||[],
       sorteo:S.sorteo,
       evActivo:S.evActivo,
@@ -1865,8 +1865,7 @@ function drawTickets(){
   // Count tickets: entradasXGan per ganador
   let totalEnv=0,totalPend=0;
   gans.forEach(g=>{
-    const ev=S.eventos.find(e=>e.id===g.evId);
-    const n=ev?.entradasXGan||1;
+    const n=entradasDe(g);
     if(g.estado==="enviado")totalEnv+=n;
     else totalPend+=n;
   });
@@ -2231,8 +2230,7 @@ function drawTickets(){
   var totalEnv=0,totalPend=0;
   S.ganadores.forEach(function(g){
     if(g._historico)return; // Skip historical ganadores - already counted in base
-    var ev=S.eventos.find(function(e){return e.id===g.evId;});
-    var n=ev&&ev.entradasXGan?ev.entradasXGan:1;
+    var n=entradasDe(g);
     if(g.estado==="enviado")totalEnv+=n;
     else totalPend+=n;
   });
@@ -2671,8 +2669,8 @@ function renderDash(){
   const totalEv=S.eventos.length;
   const totalPart=S.participantes.length;
   const totalGan=S.ganadores.length;
-  const totalTick=S.ganadores.reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
-  const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>{const ev=S.eventos.find(e=>e.id===g.evId);return acc+(ev?.entradasXGan||1);},0);
+  const totalTick=S.ganadores.reduce((acc,g)=>acc+entradasDe(g),0);
+  const tickEnv=S.ganadores.filter(g=>g.estado==="enviado").reduce((acc,g)=>acc+entradasDe(g),0);
   animateStat("ds-ev",totalEv);
   animateStat("ds-part",totalPart);
   animateStat("ds-gan",totalGan);
@@ -3341,6 +3339,7 @@ async function confirmarGanadores(){
   lista.forEach(g=>S.ganadores.push({
     ...g, id:"g"+Date.now()+"_"+Math.floor(Math.random()*99999), evId, evNombre:ev.nombre,
     venue:ev.venue, fecha:ev.fecha, hora:ev.hora,
+    entradas:ev.entradasXGan||1,
     estado:"pendiente", fechaGano:new Date().toISOString()
   }));
   S.sorteo={evId:null,lista:[]};
@@ -3609,7 +3608,7 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
 async function guardarEnSheets(lista,ev){
-  const res=await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
+  const res=await api({action:"guardarGanadores",ganadores:lista.map(g=>({mail:g.email,nombre:g.nombre,entradas:ev.entradasXGan||1})),showId:ev.id,showNombre:ev.nombre,fecha:fdL(ev.fecha),venue:ev.venue||"Movistar Arena"});
   if(!res.ok)throw new Error(res.error||"Error en guardarGanadores");
   return res;
 }
@@ -3617,7 +3616,7 @@ async function trackingEnSheets(lista,ev){
   const fmtCorta=d=>{try{const p=d.split("-");return p[2]+"/"+p[1]+"/"+p[0];}catch(e){return d;}};
   const res=await api({
     action:"trackingGanadores",
-    ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email})),
+    ganadores:lista.map(g=>({nombre:g.nombre,mail:g.email,entradas:ev.entradasXGan||1})),
     showNombre:ev.show||ev.nombre,
     fecha:fmtCorta(ev.fecha),
     entradasXGan:ev.entradasXGan||1
@@ -3625,8 +3624,33 @@ async function trackingEnSheets(lista,ev){
   if(!res.ok)throw new Error(res.error||"Error en trackingGanadores");
   return res;
 }
+const _entHydrated=new Set();
+async function hydrateEntradas(evId){
+  if(!evId||_entHydrated.has(evId))return;
+  _entHydrated.add(evId);
+  const ev=S.eventos.find(e=>e.id===evId);
+  try{
+    const res=await api({action:"getGanadoresShow",showId:String(ev?.id||evId)});
+    if(!res.ok||!Array.isArray(res.ganadores))return;
+    let changed=false;
+    res.ganadores.forEach(r=>{
+      if(!r.entradas)return;
+      const rMail=String(r.mail||"").trim().toLowerCase();
+      const rNom=String(r.nombre||"").trim().toUpperCase();
+      const g=S.ganadores.find(x=>x.evId===evId&&(
+        String(x.email||"").trim().toLowerCase()===rMail||
+        String(x.nombre||"").trim().toUpperCase()===rNom
+      ));
+      if(g&&g.entradas!==r.entradas&&g._entPrev===undefined&&_entTimers[String(g.id)]===undefined){g.entradas=r.entradas;changed=true;}
+    });
+    if(changed){save();renderGanConf();if(document.getElementById("mail-list"))renderMails();renderDash();}
+  }catch(e){
+    _entHydrated.delete(evId); // permitir reintento en el próximo render
+  }
+}
 const _ganExp=new Set();
 function renderGanConf(){
+  hydrateEntradas(S.evActivo);
   const q=(document.getElementById("gan-search")?.value||"").toLowerCase();
   const evId=S.evActivo;
   let gans=S.ganadores.filter(g=>g.evId===evId);
@@ -3647,9 +3671,18 @@ function renderGanConf(){
   const preview=allGans.slice(0,3).map(g=>g.nombre.split(' ')[0]).join(', ')+(allGans.length>3?' y '+(allGans.length-3)+' más':'');
   const rows=gans.map((g,i)=>{
     const canDel=g.estado!=="enviado";
+    const ent=entradasDe(g);
+    const entCtl=g.estado==="enviado"
+      ?`<span style="font-size:11px;color:var(--gray3);flex-shrink:0;min-width:44px;text-align:center">🎟 ${ent}</span>`
+      :`<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+          <button class="btn bo bsm" style="padding:2px 8px" data-gid="${g.id}" onclick="stepEntradas(this.dataset.gid,-1)" title="Menos entradas">−</button>
+          <span style="font-size:11px;color:var(--ice2);min-width:34px;text-align:center">🎟 ${ent}</span>
+          <button class="btn bo bsm" style="padding:2px 8px" data-gid="${g.id}" onclick="stepEntradas(this.dataset.gid,1)" title="Más entradas">+</button>
+        </div>`;
     return `<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--line)">
       <div style="font-family:var(--fd);font-size:16px;color:var(--ice);opacity:.35;width:22px;text-align:center;line-height:1">${i+1}</div>
       <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${g.nombre}</div><div style="font-size:10px;color:var(--gray3)">${g.email}${g.dni?" · DNI "+g.dni:""}</div></div>
+      ${entCtl}
       <span class="bic ${g.estado==="enviado"?"bgi":"bai"}">${g.estado==="enviado"?"✓ Enviado":"Pendiente"}</span>
       ${canDel?`<button class="btn br bsm" style="margin-left:4px" onclick="eliminarGanConfirmado('${g.id}')" title="Eliminar de la lista">✕</button>`:''}
     </div>`;
@@ -3669,6 +3702,40 @@ function renderGanConf(){
     </div>
     ${isExp?"<div>"+rows+"</div>":""}
   </div>`;
+}
+const _entTimers={},_entSeq={};
+function stepEntradas(gid,delta){
+  const g=S.ganadores.find(x=>String(x.id)===String(gid));
+  if(!g||g.estado==="enviado")return;
+  const actual=entradasDe(g);
+  const nuevo=Math.min(10,Math.max(1,actual+parseInt(delta)));
+  if(nuevo===actual)return;
+  if(g._entPrev===undefined)g._entPrev=actual; // base del delta hasta que el backend confirme
+  g.entradas=nuevo;
+  save();renderGanConf();renderDash();
+  clearTimeout(_entTimers[gid]);
+  _entTimers[gid]=setTimeout(()=>_pushEntradas(g),600);
+}
+async function _pushEntradas(g){
+  delete _entTimers[String(g.id)]; // el timer ya disparó: la entrada queda solo mientras hay edición pendiente
+  if(!S.ganadores.includes(g))return; // borrado antes del push
+  const prev=g._entPrev;delete g._entPrev;
+  const gid=String(g.id);
+  const seq=(_entSeq[gid]||0)+1;_entSeq[gid]=seq;
+  const ev=S.eventos.find(e=>e.id===g.evId);
+  try{
+    const res=await api({action:"actualizarEntradas",showId:String(ev?.id||g.evId),mail:g.email,entradas:g.entradas,entradasPrev:prev});
+    if(!res.ok)throw new Error(res.error||"sin respuesta");
+    if(typeof res.deltaTickets==="number"&&res.deltaTickets!==0&&g._historico){
+      S.ticketsBase=(S.ticketsBase||0)+res.deltaTickets;
+      save();renderDash();
+    }
+    toast("🎟 "+g.nombre.split(" ")[0]+": "+g.entradas+" entrada(s)");
+  }catch(err){
+    // Revertir solo si este push sigue siendo el último para este ganador
+    if(_entSeq[gid]===seq&&prev!==undefined){g.entradas=prev;save();renderGanConf();renderDash();}
+    toast("No se pudo actualizar entradas: "+err.message,"warn");
+  }
 }
 function toggleGanExp(id){if(_ganExp.has(id))_ganExp.delete(id);else _ganExp.add(id);renderGanConf();}
 function eliminarGanConfirmado(id){
@@ -3693,6 +3760,7 @@ function generarImagenWADesdeConf(){
 // PASO 4: MAILS
 function renderStep4(){
   const evId=S.evActivo;
+  hydrateEntradas(evId);
   const ev=S.eventos.find(e=>e.id===evId);
   const gans=S.ganadores.filter(g=>g.evId===evId);
   document.getElementById("mail-vacio").style.display=gans.length?"none":"block";
@@ -3746,6 +3814,7 @@ function renderMails(){
                 <span style="opacity:.5;font-size:10px">✉</span><span>${g.email}</span>
               </div>
               ${g.dni?`<div style="font-size:10px;color:var(--gray3);margin-top:1px">DNI: ${g.dni}</div>`:""}
+              <div style="font-size:10px;color:var(--gray3);margin-top:1px">🎟 ${entradasDe(g)} entrada${entradasDe(g)!==1?"s":""}</div>
             </div>
             <span class="bic ${enviado?"bgi":"bai"}" style="flex-shrink:0;margin-top:2px">${enviado?"✓ Enviado":"Pendiente"}</span>
           </div>
@@ -3838,21 +3907,37 @@ async function enviarGmail(){
 }
 async function _enviarMailsCore(showKey,showName,ev,pend){
   const btn=document.getElementById("btn-gmail");
-  btn.disabled=true;btn.textContent="⏳ Enviando…";
-  const res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
-  btn.disabled=false;btn.textContent="Enviar via Gmail";
-  if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
-  // Desincronización: esperábamos mandar (pend>0) pero la planilla no devolvió ningún
-  // pendiente y no hubo errores de envío → las filas no están en Sheets para este show.
-  if(res.enviados===0 && !(res.errores&&res.errores.length) && pend.length>0){
-    alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
-    return;
+  btn.disabled=true;
+  const total=pend.length;
+  let acumEnviados=0,vuelta=0,res=null,desync=false;
+  const erroresAcum=[];
+  try{
+    do{
+      vuelta++;
+      btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
+      res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
+      if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");break;}
+      // Desincronización (solo vuelta 1): esperábamos pendientes pero la planilla no devolvió ninguno
+      if(vuelta===1&&res.enviados===0&&!(res.errores&&res.errores.length)&&!res.restantes&&pend.length>0){
+        desync=true;
+        alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
+        break;
+      }
+      // Marcar localmente solo los confirmados por el backend (si no trae lista, marcar todos)
+      const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
+      pend.forEach(g=>{if(g.estado!=="enviado"&&(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase())))g.estado="enviado";});
+      acumEnviados+=res.enviados||0;
+      if(res.errores?.length)erroresAcum.push(...res.errores);
+      save();renderMails();renderDash();
+      btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
+    }while(res.ok&&res.restantes>0&&vuelta<30);
+  }finally{
+    btn.disabled=false;btn.textContent="Enviar via Gmail";
   }
-  // Marcar localmente solo los confirmados por el backend (si la respuesta no trae la lista, marcar todos)
-  const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
-  pend.forEach(g=>{if(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase()))g.estado="enviado";});
-  save();toast(res.mensaje||pend.length+" mails enviados");renderMails();renderDash();
-  if(res.errores?.length)setTimeout(()=>alert("Errores:\n"+res.errores.join("\n")),500);
+  if(res&&res.ok&&!desync){
+    toast(acumEnviados+" mail"+(acumEnviados!==1?"s":"")+" enviado"+(acumEnviados!==1?"s":"")+(erroresAcum.length?" · "+erroresAcum.length+" con error":""));
+  }
+  if(erroresAcum.length)setTimeout(()=>alert("Errores:\n"+erroresAcum.join("\n")),500);
 }
 function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
   const existing=document.getElementById("preflight-modal");
@@ -3877,7 +3962,7 @@ function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
     color="var(--red)";
   } else if(check.status==="insufficient"){
     titulo="PDFs insuficientes";
-    detalle="Necesitás <strong>"+check.expected+"</strong> PDFs ("+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" × "+check.entradasXGan+" entrada"+(check.entradasXGan!==1?"s":"")+") pero hay solo <strong>"+check.found+"</strong> en la carpeta <em>'"+esc(check.folderName||"")+"'</em>.<br>Subí los PDFs que faltan y reintentá.";
+    detalle="Necesitás <strong>"+check.expected+"</strong> PDF(s) para los "+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" pendiente"+(check.pendCount!==1?"s":"")+" pero hay solo <strong>"+check.found+"</strong> disponibles en la carpeta <em>'"+esc(check.folderName||"")+"'</em> (los ya enviados a otros ganadores no cuentan).<br>Subí los PDFs que faltan y reintentá.";
     color="var(--red)";
   }
   // El backend rechaza envíos con PDFs insuficientes — no existe "enviar igual"
@@ -3907,6 +3992,12 @@ function copiar(bid,btn){
 
 // HISTORIAL
 // UTILS
+function entradasDe(g){
+  const n=parseInt(g.entradas);
+  if(!isNaN(n)&&n>0&&n<=10)return n;
+  const ev=S.eventos.find(e=>e.id===g.evId);
+  return ev?.entradasXGan||1;
+}
 const v=id=>document.getElementById(id)?.value||"";
 const fd=iso=>{try{return new Date(iso).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})}catch(e){return iso||"—"}};
 const fdL=d=>{if(!d)return"—";try{const clean=parseFecha(d)||d;const dt=new Date(clean+"T12:00:00");if(isNaN(dt)||dt.getFullYear()<1990)return d||"—";return dt.toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"long",year:"numeric"})}catch(e){return d||"—"}};

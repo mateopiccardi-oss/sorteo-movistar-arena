@@ -101,10 +101,12 @@ function doPost(e) {
       case "inscribir":         return resp(inscribir(body.mail, body.showId, body.showNombre, body.fecha));
       case "getInscriptos":     return resp(getInscriptos(body.showId));
       case "guardarGanadores":  return resp(guardarGanadores(body.ganadores, body.showId, body.showNombre, body.fecha, body.venue));
+      case "actualizarEntradas": return resp(actualizarEntradas(body.showId, body.mail, body.entradas, body.entradasPrev));
+      case "getGanadoresShow":   return resp(getGanadoresShow(body.showId));
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
       case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
-      case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha));
+      case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha, body.entradasXGan));
       case "leerTracking":           return resp(leerTracking());
       case "getUltimasVictorias":    return resp(getUltimasVictorias(body.nombres));
       case "getShows":               return resp(getShows());
@@ -264,13 +266,18 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
 
   if (!hoja) {
     hoja = ss.insertSheet("Ganadores");
-    hoja.appendRow(["Timestamp", "Show ID", "Show", "Fecha Show", "Venue", "Mail", "Nombre", "Estado Mail", "PDF enviado"]);
-    hoja.getRange(1, 1, 1, 9).setFontWeight("bold");
+    hoja.appendRow(["Timestamp", "Show ID", "Show", "Fecha Show", "Venue", "Mail", "Nombre", "Estado Mail", "PDF enviado", "Entradas"]);
+    hoja.getRange(1, 1, 1, 10).setFontWeight("bold");
+  }
+  // Migración lazy: hojas creadas antes de la col "Entradas"
+  if (!String(hoja.getRange(1, 10).getValue()).trim()) {
+    hoja.getRange(1, 10).setValue("Entradas").setFontWeight("bold");
   }
 
   const fecha_reg = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
 
   ganadores.forEach(g => {
+    const ent = parseInt(g.entradas);
     hoja.appendRow([
       new Date(),
       showId,
@@ -280,11 +287,83 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
       g.mail || g.email,
       g.nombre,
       "Pendiente",
-      ""
+      "",
+      (isNaN(ent) || ent < 1 || ent > 10) ? "" : ent
     ]);
   });
 
   return { ok: true, mensaje: `${ganadores.length} ganadores guardados` };
+}
+
+// ============================================================
+//  ACTUALIZAR ENTRADAS — edita la cantidad de un ganador Pendiente
+//  Ajusta B123 (total historico de tickets) por el delta para que
+//  el total del dashboard no quede desfasado tras la edicion.
+// ============================================================
+function actualizarEntradas(showId, mail, entradas, entradasPrev) {
+  if (!showId || !mail) return { ok: false, error: "showId y mail requeridos" };
+  var n = parseInt(entradas);
+  if (isNaN(n) || n < 1 || n > 10) return { ok: false, error: "Cantidad inválida (1 a 10)" };
+
+  var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  var hoja = ss.getSheetByName("Ganadores");
+  if (!hoja) return { ok: false, error: "No existe la pestaña Ganadores" };
+
+  var datos = hoja.getDataRange().getValues();
+  var m = String(mail).trim().toLowerCase();
+
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() === String(showId).trim() &&
+        String(datos[i][5]).trim().toLowerCase() === m &&
+        String(datos[i][7]).trim() === "Pendiente") {
+
+      var oldCell = parseInt(datos[i][9]);
+      var old = (!isNaN(oldCell) && oldCell > 0) ? oldCell : (parseInt(entradasPrev) || null);
+
+      hoja.getRange(i + 1, 10).setValue(n);
+
+      var delta = 0;
+      if (old !== null && old !== n) {
+        delta = n - old;
+        try {
+          var tr = ss.getSheetByName("Tracking Ganadores");
+          var valB = tr.getRange("B123").getValue();
+          var base = (valB && !isNaN(Number(valB))) ? parseInt(valB) : 0;
+          tr.getRange("B123").setValue(base + delta);
+        } catch (e2) {
+          Logger.log("actualizarEntradas: no se pudo ajustar B123: " + e2.message);
+          delta = 0;
+        }
+      }
+      return { ok: true, entradas: n, deltaTickets: delta };
+    }
+  }
+  return { ok: false, error: "No hay fila Pendiente para ese ganador en este show (¿ya se envió?)" };
+}
+
+// ============================================================
+//  GET GANADORES SHOW — filas de la pestaña Ganadores de un show
+//  La app lo usa para hidratar cantidades al recargar (multi-compu).
+// ============================================================
+function getGanadoresShow(showId) {
+  if (!showId) return { ok: false, error: "Show ID requerido" };
+  var ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  var hoja = ss.getSheetByName("Ganadores");
+  if (!hoja) return { ok: true, ganadores: [] };
+
+  var datos = hoja.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() !== String(showId).trim()) continue;
+    var ent = parseInt(datos[i][9]);
+    out.push({
+      mail: String(datos[i][5]).trim(),
+      nombre: String(datos[i][6]).trim(),
+      estado: String(datos[i][7]).trim(),
+      entradas: (isNaN(ent) || ent < 1 || ent > 10) ? null : ent
+    });
+  }
+  return { ok: true, ganadores: out };
 }
 
 // ============================================================
@@ -299,6 +378,21 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
 //        📄 entrada_1.pdf
 //        📄 entrada_2.pdf
 // ============================================================
+
+// PDFs ya asignados a CUALQUIER fila del show (col I "PDF enviado").
+// Evita que una reanudación vuelva a repartir PDFs ya enviados a otros ganadores.
+function _pdfsUsadosDelShow(datos, showId) {
+  var usados = {};
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() !== String(showId).trim()) continue;
+    String(datos[i][8] || "").split(",").forEach(function(nom) {
+      var n = nom.trim();
+      if (n) usados[n] = true;
+    });
+  }
+  return usados;
+}
+
 function enviarMails(showId, entradasXGan) {
   const lock = LockService.getScriptLock();
   try {
@@ -315,7 +409,9 @@ function enviarMails(showId, entradasXGan) {
 
 function _enviarMailsLocked(showId, entradasXGan) {
   if (!showId) return { ok: false, error: "Show ID requerido" };
-  entradasXGan = parseInt(entradasXGan) || 1;
+  var inicio = Date.now();
+  var BUDGET_MS = 240000; // corta limpio a los 4 min (limite real de Apps Script: ~6 min)
+  var epgDefault = parseInt(entradasXGan) || 1;
 
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
   const hoja = ss.getSheetByName("Ganadores");
@@ -326,6 +422,7 @@ function _enviarMailsLocked(showId, entradasXGan) {
 
   for (let i = 1; i < datos.length; i++) {
     if (String(datos[i][1]).trim() === String(showId).trim() && String(datos[i][7]).trim() === "Pendiente") {
+      const entFila = parseInt(datos[i][9]);
       ganadores.push({
         mail: String(datos[i][5]).trim(),
         nombre: String(datos[i][6]).trim(),
@@ -333,30 +430,36 @@ function _enviarMailsLocked(showId, entradasXGan) {
         fecha: String(datos[i][3]).trim(),
         venue: String(datos[i][4]).trim(),
         fila: i + 1,
+        entradas: (isNaN(entFila) || entFila < 1 || entFila > 10) ? epgDefault : entFila
       });
     }
   }
 
-  if (!ganadores.length) return { ok: true, enviados: 0, enviadosMails: [], mensaje: "No hay ganadores pendientes" };
+  if (!ganadores.length) return { ok: true, enviados: 0, enviadosMails: [], errores: [], restantes: 0, mensaje: "No hay ganadores pendientes" };
 
-  // Buscar PDFs en Drive (por nombre del show o por ID)
-  const pdfs = buscarPDFs(showId, ganadores[0].showNombre);
+  // Buscar PDFs y descartar los ya asignados en cualquier fila del show
+  const usados = _pdfsUsadosDelShow(datos, showId);
+  const pdfs = buscarPDFs(showId, ganadores[0].showNombre).filter(function(p) { return !usados[p.getName()]; });
 
-  // Regla estricta: si los PDFs no alcanzan, no se envía NINGÚN mail
-  const necesarios = ganadores.length * entradasXGan;
+  // Regla estricta: si los PDFs disponibles no alcanzan, no se envía NINGÚN mail
+  const necesarios = ganadores.reduce(function(acc, g) { return acc + g.entradas; }, 0);
   if (pdfs.length < necesarios) {
     return {
       ok: false,
-      error: "Hay " + pdfs.length + " PDF(s) en Drive y se necesitan " + necesarios +
-             " (" + ganadores.length + " ganador(es) × " + entradasXGan + " entrada(s)) — no se envió ningún mail."
+      error: "Hay " + pdfs.length + " PDF(s) disponibles en Drive (sin contar los ya enviados) y se necesitan " + necesarios +
+             " para " + ganadores.length + " ganador(es) pendiente(s) — no se envió ningún mail."
     };
   }
 
   const errores = [];
   const enviadosMails = [];
   let enviados = 0;
+  let pdfCursor = 0;
+  let idx = 0;
 
-  ganadores.forEach((g, i) => {
+  for (idx = 0; idx < ganadores.length; idx++) {
+    if (Date.now() - inicio > BUDGET_MS) break; // corta limpio; la app reanuda con otra llamada
+    const g = ganadores[idx];
     let sent = false;
     try {
       const asunto = CONFIG.MAIL_ASUNTO
@@ -375,39 +478,52 @@ function _enviarMailsLocked(showId, entradasXGan) {
         replyTo: CONFIG.MAIL_FROM_ALIAS
       };
 
-      // Adjuntar N PDFs por ganador según entradasXGan (el pre-check garantiza que alcanzan)
-      const pdfStart = i * entradasXGan;
-      const pdfSlice = pdfs.slice(pdfStart, pdfStart + entradasXGan);
+      // Cada ganador consume g.entradas PDFs de la lista disponible
+      const pdfSlice = pdfs.slice(pdfCursor, pdfCursor + g.entradas);
+      const pdfNombres = pdfSlice.map(function(p) { return p.getName(); }).join(", ");
       opts.attachments = pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); });
 
       // Enviar como HTML para soportar UTF-8 y emojis correctamente
       opts.htmlBody = cuerpo.replace(/\n/g, "<br>");
 
-      // Marcar ANTES de enviar: si la ejecución se corta acá, un reintento
-      // solo retoma filas "Pendiente" y nunca duplica este mail
+      // Marcar estado Y PDFs ANTES de enviar: si la ejecución muere acá, un reintento
+      // no re-manda este mail (no es Pendiente) ni reusa estos PDFs (figuran en col I)
       hoja.getRange(g.fila, 8).setValue("Enviando");
+      hoja.getRange(g.fila, 9).setValue(pdfNombres);
       GmailApp.sendEmail(g.mail, asunto, cuerpo, opts);
       sent = true;
       hoja.getRange(g.fila, 8).setValue("Enviado");
-      hoja.getRange(g.fila, 9).setValue(pdfSlice.map(function(p) { return p.getName(); }).join(", "));
 
+      pdfCursor += g.entradas;
       enviados++;
       enviadosMails.push(g.mail);
       Utilities.sleep(1200);
     } catch (err) {
       if (!sent) {
-        try { hoja.getRange(g.fila, 8).setValue("Pendiente"); } catch (e2) {}
+        // No se envió: liberar la fila y sus PDFs para el próximo intento
+        try {
+          hoja.getRange(g.fila, 8).setValue("Pendiente");
+          hoja.getRange(g.fila, 9).setValue("");
+        } catch (e2) {}
+      } else {
+        pdfCursor += g.entradas; // el mail salió: sus PDFs quedan consumidos
       }
       errores.push(g.nombre + " (" + g.mail + "): " + err.message);
     }
-  });
+  }
+
+  // restantes = pendientes NO intentados (corte por tiempo). Los que fallaron con
+  // error NO cuentan: reintentarlos automáticamente podría loopear para siempre.
+  const restantes = ganadores.length - idx;
 
   return {
     ok: true,
     enviados: enviados,
     enviadosMails: enviadosMails,
     errores: errores,
+    restantes: restantes,
     mensaje: enviados + " mail" + (enviados !== 1 ? "s" : "") + " enviado" + (enviados !== 1 ? "s" : "") +
+             (restantes ? " · quedan " + restantes + " pendientes" : "") +
              (errores.length ? " · " + errores.length + " con error" : "")
   };
 }
@@ -450,6 +566,26 @@ function checkPDFs(showId, showNombre, entradasXGan, pendCount) {
   var pc = parseInt(pendCount) || 0;
   var expected = pc * epg;
   var buscar = showNombre || showId;
+
+  // Fuente de verdad: filas Pendiente de la pestaña Ganadores (suma de col J).
+  // Si no hay filas para el show, cae al cálculo viejo pc*epg (p.ej. desincronización).
+  var usados = {};
+  try {
+    var hojaG = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID).getSheetByName("Ganadores");
+    if (hojaG) {
+      var datosG = hojaG.getDataRange().getValues();
+      usados = _pdfsUsadosDelShow(datosG, showId);
+      var sumaEnt = 0, filasPend = 0;
+      for (var gi = 1; gi < datosG.length; gi++) {
+        if (String(datosG[gi][1]).trim() === String(showId).trim() && String(datosG[gi][7]).trim() === "Pendiente") {
+          filasPend++;
+          var entG = parseInt(datosG[gi][9]);
+          sumaEnt += (isNaN(entG) || entG < 1 || entG > 10) ? epg : entG;
+        }
+      }
+      if (filasPend > 0) { expected = sumaEnt; pc = filasPend; }
+    }
+  } catch (eG) {}
 
   try {
     var raizIter = DriveApp.getFoldersByName("Sorteo Movistar Arena");
@@ -508,16 +644,17 @@ function checkPDFs(showId, showNombre, entradasXGan, pendCount) {
       }
     }
     pdfs.sort();
+    var disponibles = pdfs.filter(function(nom) { return !usados[nom]; });
 
     return {
       ok: true,
-      status: pdfs.length >= expected ? "ok" : "insufficient",
+      status: disponibles.length >= expected ? "ok" : "insufficient",
       expected: expected,
-      found: pdfs.length,
+      found: disponibles.length,
       pendCount: pc,
       entradasXGan: epg,
       folderName: carpetaShow.getName(),
-      pdfNames: pdfs.slice(0, 20)
+      pdfNames: disponibles.slice(0, 20)
     };
   } catch (e) {
     return { ok: false, error: "Error en checkPDFs: " + e.message };
@@ -748,7 +885,10 @@ function trackingGanadores(ganadores, showNombre, fecha, entradasXGan) {
 
     // Auto-increment B123 (ticketsBase) so the app stays in sync without manual updates
     var n = parseInt(entradasXGan) || 1;
-    var ticketsAdded = ganadores.length * n;
+    var ticketsAdded = ganadores.reduce(function(acc, g) {
+      var e = parseInt(g.entradas);
+      return acc + ((isNaN(e) || e < 1 || e > 10) ? n : e);
+    }, 0);
     try {
       var valB123 = hoja.getRange("B123").getValue();
       var currentBase = (valB123 && !isNaN(Number(valB123))) ? parseInt(valB123) : 0;

@@ -3906,21 +3906,37 @@ async function enviarGmail(){
 }
 async function _enviarMailsCore(showKey,showName,ev,pend){
   const btn=document.getElementById("btn-gmail");
-  btn.disabled=true;btn.textContent="⏳ Enviando…";
-  const res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
-  btn.disabled=false;btn.textContent="Enviar via Gmail";
-  if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");return;}
-  // Desincronización: esperábamos mandar (pend>0) pero la planilla no devolvió ningún
-  // pendiente y no hubo errores de envío → las filas no están en Sheets para este show.
-  if(res.enviados===0 && !(res.errores&&res.errores.length) && pend.length>0){
-    alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
-    return;
+  btn.disabled=true;
+  const total=pend.length;
+  let acumEnviados=0,vuelta=0,res=null,desync=false;
+  const erroresAcum=[];
+  try{
+    do{
+      vuelta++;
+      btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
+      res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
+      if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");break;}
+      // Desincronización (solo vuelta 1): esperábamos pendientes pero la planilla no devolvió ninguno
+      if(vuelta===1&&res.enviados===0&&!(res.errores&&res.errores.length)&&!res.restantes&&pend.length>0){
+        desync=true;
+        alert("Esperaba "+pend.length+" ganador(es) pendiente(s) para este show, pero la planilla no devolvió ninguno.\n\nPosible desincronización — revisá/reintentá la sincronización antes de enviar.");
+        break;
+      }
+      // Marcar localmente solo los confirmados por el backend (si no trae lista, marcar todos)
+      const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
+      pend.forEach(g=>{if(g.estado!=="enviado"&&(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase())))g.estado="enviado";});
+      acumEnviados+=res.enviados||0;
+      if(res.errores?.length)erroresAcum.push(...res.errores);
+      save();renderMails();renderDash();
+      btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
+    }while(res.ok&&res.restantes>0&&vuelta<30);
+  }finally{
+    btn.disabled=false;btn.textContent="Enviar via Gmail";
   }
-  // Marcar localmente solo los confirmados por el backend (si la respuesta no trae la lista, marcar todos)
-  const okMails=Array.isArray(res.enviadosMails)?new Set(res.enviadosMails.map(m=>String(m).trim().toLowerCase())):null;
-  pend.forEach(g=>{if(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase()))g.estado="enviado";});
-  save();toast(res.mensaje||pend.length+" mails enviados");renderMails();renderDash();
-  if(res.errores?.length)setTimeout(()=>alert("Errores:\n"+res.errores.join("\n")),500);
+  if(res&&res.ok&&!desync){
+    toast(acumEnviados+" mail"+(acumEnviados!==1?"s":"")+" enviado"+(acumEnviados!==1?"s":"")+(erroresAcum.length?" · "+erroresAcum.length+" con error":""));
+  }
+  if(erroresAcum.length)setTimeout(()=>alert("Errores:\n"+erroresAcum.join("\n")),500);
 }
 function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
   const existing=document.getElementById("preflight-modal");
@@ -3945,7 +3961,7 @@ function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
     color="var(--red)";
   } else if(check.status==="insufficient"){
     titulo="PDFs insuficientes";
-    detalle="Necesitás <strong>"+check.expected+"</strong> PDFs ("+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" × "+check.entradasXGan+" entrada"+(check.entradasXGan!==1?"s":"")+") pero hay solo <strong>"+check.found+"</strong> en la carpeta <em>'"+esc(check.folderName||"")+"'</em>.<br>Subí los PDFs que faltan y reintentá.";
+    detalle="Necesitás <strong>"+check.expected+"</strong> PDF(s) para los "+check.pendCount+" ganador"+(check.pendCount!==1?"es":"")+" pendiente"+(check.pendCount!==1?"s":"")+" pero hay solo <strong>"+check.found+"</strong> disponibles en la carpeta <em>'"+esc(check.folderName||"")+"'</em> (los ya enviados a otros ganadores no cuentan).<br>Subí los PDFs que faltan y reintentá.";
     color="var(--red)";
   }
   // El backend rechaza envíos con PDFs insuficientes — no existe "enviar igual"

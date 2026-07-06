@@ -3624,8 +3624,33 @@ async function trackingEnSheets(lista,ev){
   if(!res.ok)throw new Error(res.error||"Error en trackingGanadores");
   return res;
 }
+const _entHydrated=new Set();
+async function hydrateEntradas(evId){
+  if(!evId||_entHydrated.has(evId))return;
+  _entHydrated.add(evId);
+  const ev=S.eventos.find(e=>e.id===evId);
+  try{
+    const res=await api({action:"getGanadoresShow",showId:String(ev?.id||evId)});
+    if(!res.ok||!Array.isArray(res.ganadores))return;
+    let changed=false;
+    res.ganadores.forEach(r=>{
+      if(!r.entradas)return;
+      const rMail=String(r.mail||"").trim().toLowerCase();
+      const rNom=String(r.nombre||"").trim().toUpperCase();
+      const g=S.ganadores.find(x=>x.evId===evId&&(
+        String(x.email||"").trim().toLowerCase()===rMail||
+        String(x.nombre||"").trim().toUpperCase()===rNom
+      ));
+      if(g&&g.entradas!==r.entradas){g.entradas=r.entradas;changed=true;}
+    });
+    if(changed){save();renderGanConf();if(document.getElementById("mail-list"))renderMails();renderDash();}
+  }catch(e){
+    _entHydrated.delete(evId); // permitir reintento en el próximo render
+  }
+}
 const _ganExp=new Set();
 function renderGanConf(){
+  hydrateEntradas(S.evActivo);
   const q=(document.getElementById("gan-search")?.value||"").toLowerCase();
   const evId=S.evActivo;
   let gans=S.ganadores.filter(g=>g.evId===evId);
@@ -3734,6 +3759,7 @@ function generarImagenWADesdeConf(){
 // PASO 4: MAILS
 function renderStep4(){
   const evId=S.evActivo;
+  hydrateEntradas(evId);
   const ev=S.eventos.find(e=>e.id===evId);
   const gans=S.ganadores.filter(g=>g.evId===evId);
   document.getElementById("mail-vacio").style.display=gans.length?"none":"block";

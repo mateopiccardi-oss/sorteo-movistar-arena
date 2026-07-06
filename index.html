@@ -1284,7 +1284,7 @@ const save=()=>{
     // Only persist eventos, ganadores, sorteo state, evActivo
     const toSave={
       eventos:S.eventos,
-      ganadores:S.ganadores.filter(g=>!g._historico),
+      ganadores:S.ganadores.filter(g=>!g._historico).map(g=>{const{_entPrev,...rest}=g;return rest;}),
       colaboradores:S.colaboradores||[],
       sorteo:S.sorteo,
       evActivo:S.evActivo,
@@ -3678,7 +3678,7 @@ function renderGanConf(){
     ${isExp?"<div>"+rows+"</div>":""}
   </div>`;
 }
-const _entTimers={};
+const _entTimers={},_entSeq={};
 function stepEntradas(gid,delta){
   const g=S.ganadores.find(x=>String(x.id)===String(gid));
   if(!g||g.estado==="enviado")return;
@@ -3692,7 +3692,10 @@ function stepEntradas(gid,delta){
   _entTimers[gid]=setTimeout(()=>_pushEntradas(g),600);
 }
 async function _pushEntradas(g){
+  if(!S.ganadores.includes(g))return; // borrado antes del push
   const prev=g._entPrev;delete g._entPrev;
+  const gid=String(g.id);
+  const seq=(_entSeq[gid]||0)+1;_entSeq[gid]=seq;
   const ev=S.eventos.find(e=>e.id===g.evId);
   try{
     const res=await api({action:"actualizarEntradas",showId:String(ev?.id||g.evId),mail:g.email,entradas:g.entradas,entradasPrev:prev});
@@ -3703,7 +3706,8 @@ async function _pushEntradas(g){
     }
     toast("🎟 "+g.nombre.split(" ")[0]+": "+g.entradas+" entrada(s)");
   }catch(err){
-    if(prev!==undefined){g.entradas=prev;save();renderGanConf();renderDash();}
+    // Revertir solo si este push sigue siendo el último para este ganador
+    if(_entSeq[gid]===seq&&prev!==undefined){g.entradas=prev;save();renderGanConf();renderDash();}
     toast("No se pudo actualizar entradas: "+err.message,"warn");
   }
 }

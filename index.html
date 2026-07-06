@@ -3641,7 +3641,7 @@ async function hydrateEntradas(evId){
         String(x.email||"").trim().toLowerCase()===rMail||
         String(x.nombre||"").trim().toUpperCase()===rNom
       ));
-      if(g&&g.entradas!==r.entradas){g.entradas=r.entradas;changed=true;}
+      if(g&&g.entradas!==r.entradas&&g._entPrev===undefined&&_entTimers[String(g.id)]===undefined){g.entradas=r.entradas;changed=true;}
     });
     if(changed){save();renderGanConf();if(document.getElementById("mail-list"))renderMails();renderDash();}
   }catch(e){
@@ -3717,6 +3717,7 @@ function stepEntradas(gid,delta){
   _entTimers[gid]=setTimeout(()=>_pushEntradas(g),600);
 }
 async function _pushEntradas(g){
+  delete _entTimers[String(g.id)]; // el timer ya disparó: la entrada queda solo mientras hay edición pendiente
   if(!S.ganadores.includes(g))return; // borrado antes del push
   const prev=g._entPrev;delete g._entPrev;
   const gid=String(g.id);

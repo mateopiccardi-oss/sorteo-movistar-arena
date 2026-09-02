@@ -962,7 +962,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
     <div class="card">
       <div class="ct">Plantilla del mail</div>
       <div class="field"><label>Asunto</label><input id="mail-asunto" value="¡Ganaste entradas para {evento}! 🎟"></div>
-      <div class="field"><label>Cuerpo — variables: {nombre} {evento} {show} {venue} {fecha}</label>
+      <div class="field"><label>Cuerpo — variables: {nombre} {evento} {show} {venue} {fecha} {hora}</label>
         <textarea id="mail-cuerpo" rows="6">Hola {nombre} 👋
 
 ¡Felicitaciones! Resultaste ganador/a del sorteo para *{evento}* 🎉
@@ -3909,13 +3909,16 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
   const btn=document.getElementById("btn-gmail");
   btn.disabled=true;
   const total=pend.length;
+  // Plantilla editada en la UI: se captura una vez y viaja al backend (fallback al CONFIG del .gs si va vacía)
+  const asuntoTpl=document.getElementById("mail-asunto")?.value||"";
+  const cuerpoTpl=document.getElementById("mail-cuerpo")?.value||"";
   let acumEnviados=0,vuelta=0,res=null,desync=false;
   const erroresAcum=[];
   try{
     do{
       vuelta++;
       btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
-      res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1});
+      res=await api({action:"enviarMails",showId:String(showKey),entradasXGan:ev?.entradasXGan||1,asunto:asuntoTpl,cuerpo:cuerpoTpl,show:ev?.show||"",hora:ev?.hora||""});
       if(!res.ok){toast("Error: "+(res.error||"sin respuesta"),"warn");break;}
       // Desincronización (solo vuelta 1): esperábamos pendientes pero la planilla no devolvió ninguno
       if(vuelta===1&&res.enviados===0&&!(res.errores&&res.errores.length)&&!res.restantes&&pend.length>0){

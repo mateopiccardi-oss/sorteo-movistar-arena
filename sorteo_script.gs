@@ -103,7 +103,7 @@ function doPost(e) {
       case "guardarGanadores":  return resp(guardarGanadores(body.ganadores, body.showId, body.showNombre, body.fecha, body.venue));
       case "actualizarEntradas": return resp(actualizarEntradas(body.showId, body.mail, body.entradas, body.entradasPrev));
       case "getGanadoresShow":   return resp(getGanadoresShow(body.showId));
-      case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
+      case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan, body.asunto, body.cuerpo, body.show, body.hora));
       case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
       case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha, body.entradasXGan));
@@ -393,7 +393,7 @@ function _pdfsUsadosDelShow(datos, showId) {
   return usados;
 }
 
-function enviarMails(showId, entradasXGan) {
+function enviarMails(showId, entradasXGan, asuntoCustom, cuerpoCustom, showTxt, horaTxt) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(30000);
@@ -401,17 +401,22 @@ function enviarMails(showId, entradasXGan) {
     return { ok: false, error: "Otro envío está en curso — esperá unos segundos y reintentá." };
   }
   try {
-    return _enviarMailsLocked(showId, entradasXGan);
+    return _enviarMailsLocked(showId, entradasXGan, asuntoCustom, cuerpoCustom, showTxt, horaTxt);
   } finally {
     lock.releaseLock();
   }
 }
 
-function _enviarMailsLocked(showId, entradasXGan) {
+function _enviarMailsLocked(showId, entradasXGan, asuntoCustom, cuerpoCustom, showTxt, horaTxt) {
   if (!showId) return { ok: false, error: "Show ID requerido" };
   var inicio = Date.now();
   var BUDGET_MS = 240000; // corta limpio a los 4 min (limite real de Apps Script: ~6 min)
   var epgDefault = parseInt(entradasXGan) || 1;
+  // Plantilla editada en la UI; si no viene (cliente viejo o vacía), cae al CONFIG
+  var asuntoTpl = (asuntoCustom && String(asuntoCustom).trim()) ? String(asuntoCustom) : CONFIG.MAIL_ASUNTO;
+  var cuerpoTpl = (cuerpoCustom && String(cuerpoCustom).trim()) ? String(cuerpoCustom) : CONFIG.MAIL_CUERPO;
+  showTxt = showTxt ? String(showTxt) : "";
+  horaTxt = horaTxt ? String(horaTxt) : "";
 
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
   const hoja = ss.getSheetByName("Ganadores");
@@ -462,15 +467,21 @@ function _enviarMailsLocked(showId, entradasXGan) {
     const g = ganadores[idx];
     let sent = false;
     try {
-      const asunto = CONFIG.MAIL_ASUNTO
-        .replace(/{nombre}/g, g.nombre)
-        .replace(/{evento}/g, g.showNombre);
-
-      const cuerpo = CONFIG.MAIL_CUERPO
+      const asunto = asuntoTpl
         .replace(/{nombre}/g, g.nombre)
         .replace(/{evento}/g, g.showNombre)
+        .replace(/{show}/g, showTxt || g.showNombre)
         .replace(/{venue}/g, g.venue)
-        .replace(/{fecha}/g, g.fecha);
+        .replace(/{fecha}/g, g.fecha)
+        .replace(/{hora}/g, horaTxt);
+
+      const cuerpo = cuerpoTpl
+        .replace(/{nombre}/g, g.nombre)
+        .replace(/{evento}/g, g.showNombre)
+        .replace(/{show}/g, showTxt || g.showNombre)
+        .replace(/{venue}/g, g.venue)
+        .replace(/{fecha}/g, g.fecha)
+        .replace(/{hora}/g, horaTxt);
 
       const opts = {
         name: CONFIG.MAIL_REMITENTE,

@@ -393,6 +393,89 @@ function _pdfsUsadosDelShow(datos, showId) {
   return usados;
 }
 
+// ============================================================
+//  ASIGNACIÓN DE PDFs POR ASIENTOS CONTIGUOS
+//  El ticketing nombra los PDFs "ticket - fecha - show - sector - fila - asiento - texto.pdf".
+//  Cada ganador recibe asientos consecutivos de una misma fila; los asientos sueltos
+//  (filas impares) se juntan entre sí al final y se informan como "no contiguos".
+// ============================================================
+function _parsearAsientoPdf(nombre) {
+  var partes = String(nombre || "").replace(/\.pdf$/i, "").split(" - ");
+  if (partes.length < 6) return null;
+  var n = partes.length;
+  var asiento = partes[n - 2].trim();
+  if (!/^\d+$/.test(asiento)) return null;
+  var fila = partes[n - 3].trim();
+  var sector = partes[n - 4].trim();
+  if (!fila || !sector) return null;
+  return { sector: sector, fila: fila, asiento: parseInt(asiento, 10) };
+}
+
+// nombres: nombres de PDF disponibles (ya sin los usados), en orden de ticket.
+// cantidades: entradas por ganador, en orden de planilla.
+// Devuelve { asignacion: [[nombres]] alineado a cantidades, noContiguos: [indices] }.
+function _asignarPdfsContiguos(nombres, cantidades) {
+  var grupos = {};
+  var sueltos = [];
+  nombres.forEach(function(nom) {
+    var p = _parsearAsientoPdf(nom);
+    if (!p) { sueltos.push(nom); return; }
+    var k = p.sector + "|" + p.fila;
+    if (!grupos[k]) grupos[k] = [];
+    grupos[k].push({ nombre: nom, asiento: p.asiento });
+  });
+  sueltos.sort();
+
+  // Corridas de asientos consecutivos por fila, en orden de aparición (= orden de ticket)
+  var corridas = [];
+  Object.keys(grupos).forEach(function(k) {
+    var seats = grupos[k].sort(function(a, b) { return a.asiento - b.asiento; });
+    var run = [seats[0]];
+    for (var i = 1; i < seats.length; i++) {
+      if (seats[i].asiento === seats[i - 1].asiento + 1) run.push(seats[i]);
+      else { corridas.push(run); run = [seats[i]]; }
+    }
+    corridas.push(run);
+  });
+
+  // Grupos grandes primero; a igual cantidad, orden de planilla
+  var orden = cantidades.map(function(c, i) { return i; })
+    .sort(function(a, b) { return (cantidades[b] - cantidades[a]) || (a - b); });
+
+  var asignacion = cantidades.map(function() { return []; });
+  var noContiguos = [];
+
+  orden.forEach(function(idx) {
+    var n = cantidades[idx];
+    // Mejor ajuste: la corrida más chica que alcance (empate → la primera)
+    var best = -1;
+    for (var c = 0; c < corridas.length; c++) {
+      if (corridas[c].length >= n && (best < 0 || corridas[c].length < corridas[best].length)) best = c;
+    }
+    if (best >= 0) {
+      asignacion[idx] = corridas[best].splice(0, n).map(function(s) { return s.nombre; });
+      if (!corridas[best].length) corridas.splice(best, 1);
+      return;
+    }
+    // Sin corrida que alcance: juntar desde las corridas más chicas (sueltos de filas impares),
+    // después los PDFs con nombre no parseable.
+    var tomados = [];
+    while (tomados.length < n && corridas.length) {
+      var minC = 0;
+      for (var m = 1; m < corridas.length; m++) if (corridas[m].length < corridas[minC].length) minC = m;
+      corridas[minC].splice(0, n - tomados.length).forEach(function(s) { tomados.push(s.nombre); });
+      if (!corridas[minC].length) corridas.splice(minC, 1);
+    }
+    while (tomados.length < n && sueltos.length) tomados.push(sueltos.shift());
+    asignacion[idx] = tomados;
+    noContiguos.push(idx);
+  });
+
+  noContiguos.sort(function(a, b) { return a - b; });
+  return { asignacion: asignacion, noContiguos: noContiguos };
+}
+
+
 function enviarMails(showId, entradasXGan) {
   const lock = LockService.getScriptLock();
   try {
@@ -451,10 +534,18 @@ function _enviarMailsLocked(showId, entradasXGan) {
     };
   }
 
+  // Asignación por asientos contiguos (misma fila, numeración seguida) calculada una vez
+  // porNombre guarda listas por si hubiera dos archivos con el mismo nombre (no se pisan)
+  const porNombre = {};
+  pdfs.forEach(function(p) { var k = p.getName(); if (!porNombre[k]) porNombre[k] = []; porNombre[k].push(p); });
+  const asig = _asignarPdfsContiguos(pdfs.map(function(p) { return p.getName(); }), ganadores.map(function(g) { return g.entradas; }));
+  const noContiguosIdx = {};
+  asig.noContiguos.forEach(function(i) { noContiguosIdx[i] = true; });
+
   const errores = [];
   const enviadosMails = [];
+  const noContiguos = [];
   let enviados = 0;
-  let pdfCursor = 0;
   let idx = 0;
 
   for (idx = 0; idx < ganadores.length; idx++) {
@@ -478,8 +569,9 @@ function _enviarMailsLocked(showId, entradasXGan) {
         replyTo: CONFIG.MAIL_FROM_ALIAS
       };
 
-      // Cada ganador consume g.entradas PDFs de la lista disponible
-      const pdfSlice = pdfs.slice(pdfCursor, pdfCursor + g.entradas);
+      // PDFs asignados a este ganador (asientos contiguos de una misma fila si los hay)
+      const pdfSlice = asig.asignacion[idx].map(function(nom) { return porNombre[nom].shift(); });
+      if (pdfSlice.length < g.entradas) throw new Error("PDFs insuficientes para asignar (" + pdfSlice.length + "/" + g.entradas + ")");
       const pdfNombres = pdfSlice.map(function(p) { return p.getName(); }).join(", ");
       opts.attachments = pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); });
 
@@ -494,7 +586,7 @@ function _enviarMailsLocked(showId, entradasXGan) {
       sent = true;
       hoja.getRange(g.fila, 8).setValue("Enviado");
 
-      pdfCursor += g.entradas;
+      if (noContiguosIdx[idx]) noContiguos.push(g.nombre);
       enviados++;
       enviadosMails.push(g.mail);
       Utilities.sleep(1200);
@@ -505,8 +597,6 @@ function _enviarMailsLocked(showId, entradasXGan) {
           hoja.getRange(g.fila, 8).setValue("Pendiente");
           hoja.getRange(g.fila, 9).setValue("");
         } catch (e2) {}
-      } else {
-        pdfCursor += g.entradas; // el mail salió: sus PDFs quedan consumidos
       }
       errores.push(g.nombre + " (" + g.mail + "): " + err.message);
     }
@@ -522,8 +612,10 @@ function _enviarMailsLocked(showId, entradasXGan) {
     enviadosMails: enviadosMails,
     errores: errores,
     restantes: restantes,
+    noContiguos: noContiguos,
     mensaje: enviados + " mail" + (enviados !== 1 ? "s" : "") + " enviado" + (enviados !== 1 ? "s" : "") +
              (restantes ? " · quedan " + restantes + " pendientes" : "") +
+             (noContiguos.length ? " · " + noContiguos.length + " con asientos no contiguos" : "") +
              (errores.length ? " · " + errores.length + " con error" : "")
   };
 }

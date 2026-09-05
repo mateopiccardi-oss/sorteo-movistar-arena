@@ -3911,6 +3911,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
   const total=pend.length;
   let acumEnviados=0,vuelta=0,res=null,desync=false;
   const erroresAcum=[];
+  const noContiguosAcum=[];
   try{
     do{
       vuelta++;
@@ -3928,6 +3929,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
       pend.forEach(g=>{if(g.estado!=="enviado"&&(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase())))g.estado="enviado";});
       acumEnviados+=res.enviados||0;
       if(res.errores?.length)erroresAcum.push(...res.errores);
+      if(res.noContiguos?.length)noContiguosAcum.push(...res.noContiguos);
       save();renderMails();renderDash();
       btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
     }while(res.ok&&res.restantes>0&&vuelta<30);
@@ -3938,6 +3940,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
     toast(acumEnviados+" mail"+(acumEnviados!==1?"s":"")+" enviado"+(acumEnviados!==1?"s":"")+(erroresAcum.length?" · "+erroresAcum.length+" con error":""));
   }
   if(erroresAcum.length)setTimeout(()=>alert("Errores:\n"+erroresAcum.join("\n")),500);
+  if(noContiguosAcum.length)setTimeout(()=>alert("⚠ Ganadores con asientos NO contiguos (sobraron asientos sueltos de filas impares):\n\n"+noContiguosAcum.join("\n")+"\n\nRevisá la columna \"PDF enviado\" de la planilla si querés avisarles."),700);
 }
 function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
   const existing=document.getElementById("preflight-modal");

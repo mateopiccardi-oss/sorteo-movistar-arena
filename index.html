@@ -1111,7 +1111,7 @@ hr{border:none;border-top:1px solid var(--line);margin:12px 0}
       <div class="ct" style="margin-bottom:10px">Sorteo</div>
       <div class="r2">
         <div class="field"><label>Ganadores *</label><input id="ev-cant" type="number" min="1" value="2"></div>
-        <div class="field"><label>Entradas por ganador *</label><input id="ev-exg" type="number" min="1" value="1"></div>
+        <div class="field"><label>Entradas por ganador *</label><input id="ev-exg" type="number" min="1" value="2"></div>
       </div>
       <div class="field"><label>Link del formulario de inscripción</label><input id="ev-form" placeholder="https://forms.gle/..."></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:var(--rsm);border:1px solid var(--line);background:rgba(255,255,255,0.02);margin-bottom:0">
@@ -1436,7 +1436,7 @@ function autoFillShowBase(){
   if(existing){
     document.getElementById("ev-venue").value=existing.venue||"Movistar Arena, Buenos Aires";
     document.getElementById("ev-cant").value=existing.cantidad||2;
-    document.getElementById("ev-exg").value=existing.entradasXGan||1;
+    document.getElementById("ev-exg").value=existing.entradasXGan||2;
     document.getElementById("ev-anti").checked=existing.antiRep!==false;
   }
 }
@@ -1455,7 +1455,7 @@ async function crearEvento(){
     hora:document.getElementById("ev-hora").value,
     venue:document.getElementById("ev-venue").value.trim(),
     cantidad:parseInt(document.getElementById("ev-cant").value)||2,
-    entradasXGan:parseInt(document.getElementById("ev-exg").value)||1,
+    entradasXGan:parseInt(document.getElementById("ev-exg").value)||2,
     antiRep:document.getElementById("ev-anti").checked,
     formUrl:document.getElementById("ev-form").value.trim(),
     creadoEn:new Date().toISOString()
@@ -2510,7 +2510,7 @@ async function importarDesdeTracking(silente){
           S.eventos.push({
             id:evId, show:show, nombre:show+(fecha?" - "+fecha:""),
             fecha:parsedFechaCol||"", hora:"", venue:"Movistar Arena, Buenos Aires",
-            cantidad:2, entradasXGan:1, antiRep:true,
+            cantidad:2, entradasXGan:2, antiRep:true,
             formUrl:"", creadoEn:new Date().toISOString(),
             _fromTracking:true
           });
@@ -3911,6 +3911,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
   const total=pend.length;
   let acumEnviados=0,vuelta=0,res=null,desync=false;
   const erroresAcum=[];
+  const noContiguosAcum=[];
   try{
     do{
       vuelta++;
@@ -3928,6 +3929,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
       pend.forEach(g=>{if(g.estado!=="enviado"&&(!okMails||okMails.has(String(g.email||g.mail||"").trim().toLowerCase())))g.estado="enviado";});
       acumEnviados+=res.enviados||0;
       if(res.errores?.length)erroresAcum.push(...res.errores);
+      if(res.noContiguos?.length)noContiguosAcum.push(...res.noContiguos);
       save();renderMails();renderDash();
       btn.textContent="⏳ Enviando… "+acumEnviados+"/"+total;
     }while(res.ok&&res.restantes>0&&vuelta<30);
@@ -3938,6 +3940,7 @@ async function _enviarMailsCore(showKey,showName,ev,pend){
     toast(acumEnviados+" mail"+(acumEnviados!==1?"s":"")+" enviado"+(acumEnviados!==1?"s":"")+(erroresAcum.length?" · "+erroresAcum.length+" con error":""));
   }
   if(erroresAcum.length)setTimeout(()=>alert("Errores:\n"+erroresAcum.join("\n")),500);
+  if(noContiguosAcum.length)setTimeout(()=>alert("⚠ Ganadores con asientos NO contiguos (sobraron asientos sueltos de filas impares):\n\n"+noContiguosAcum.join("\n")+"\n\nRevisá la columna \"PDF enviado\" de la planilla si querés avisarles."),700);
 }
 function mostrarPreflightPDFs(check,pend,ev,nombreCarpeta){
   const existing=document.getElementById("preflight-modal");

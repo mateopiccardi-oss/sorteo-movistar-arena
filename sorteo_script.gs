@@ -104,6 +104,8 @@ function doPost(e) {
       case "actualizarEntradas": return resp(actualizarEntradas(body.showId, body.mail, body.entradas, body.entradasPrev));
       case "getGanadoresShow":   return resp(getGanadoresShow(body.showId));
       case "enviarMails":       return resp(enviarMails(body.showId, body.entradasXGan));
+      case "reenviarEntradaFaltante": return resp(reenviarEntradaFaltante(body.showId, body.entradasCorrectas, body.soloMail));
+      case "debugBuscarPdfExacto": return resp(debugBuscarPdfExacto(body.showId, body.showNombre, body.nombre));
       case "checkPDFs":         return resp(checkPDFs(body.showId, body.showNombre, body.entradasXGan, body.pendCount));
       case "syncGanadores":     return resp(syncGanadores(body.ganadores));
       case "trackingGanadores": return resp(trackingGanadores(body.ganadores, body.showNombre, body.fecha, body.entradasXGan));
@@ -393,6 +395,89 @@ function _pdfsUsadosDelShow(datos, showId) {
   return usados;
 }
 
+// ============================================================
+//  ASIGNACIÓN DE PDFs POR ASIENTOS CONTIGUOS
+//  El ticketing nombra los PDFs "ticket - fecha - show - sector - fila - asiento - texto.pdf".
+//  Cada ganador recibe asientos consecutivos de una misma fila; los asientos sueltos
+//  (filas impares) se juntan entre sí al final y se informan como "no contiguos".
+// ============================================================
+function _parsearAsientoPdf(nombre) {
+  var partes = String(nombre || "").replace(/\.pdf$/i, "").split(" - ");
+  if (partes.length < 6) return null;
+  var n = partes.length;
+  var asiento = partes[n - 2].trim();
+  if (!/^\d+$/.test(asiento)) return null;
+  var fila = partes[n - 3].trim();
+  var sector = partes[n - 4].trim();
+  if (!fila || !sector) return null;
+  return { sector: sector, fila: fila, asiento: parseInt(asiento, 10) };
+}
+
+// nombres: nombres de PDF disponibles (ya sin los usados), en orden de ticket.
+// cantidades: entradas por ganador, en orden de planilla.
+// Devuelve { asignacion: [[nombres]] alineado a cantidades, noContiguos: [indices] }.
+function _asignarPdfsContiguos(nombres, cantidades) {
+  var grupos = {};
+  var sueltos = [];
+  nombres.forEach(function(nom) {
+    var p = _parsearAsientoPdf(nom);
+    if (!p) { sueltos.push(nom); return; }
+    var k = p.sector + "|" + p.fila;
+    if (!grupos[k]) grupos[k] = [];
+    grupos[k].push({ nombre: nom, asiento: p.asiento });
+  });
+  sueltos.sort();
+
+  // Corridas de asientos consecutivos por fila, en orden de aparición (= orden de ticket)
+  var corridas = [];
+  Object.keys(grupos).forEach(function(k) {
+    var seats = grupos[k].sort(function(a, b) { return a.asiento - b.asiento; });
+    var run = [seats[0]];
+    for (var i = 1; i < seats.length; i++) {
+      if (seats[i].asiento === seats[i - 1].asiento + 1) run.push(seats[i]);
+      else { corridas.push(run); run = [seats[i]]; }
+    }
+    corridas.push(run);
+  });
+
+  // Grupos grandes primero; a igual cantidad, orden de planilla
+  var orden = cantidades.map(function(c, i) { return i; })
+    .sort(function(a, b) { return (cantidades[b] - cantidades[a]) || (a - b); });
+
+  var asignacion = cantidades.map(function() { return []; });
+  var noContiguos = [];
+
+  orden.forEach(function(idx) {
+    var n = cantidades[idx];
+    // Mejor ajuste: la corrida más chica que alcance (empate → la primera)
+    var best = -1;
+    for (var c = 0; c < corridas.length; c++) {
+      if (corridas[c].length >= n && (best < 0 || corridas[c].length < corridas[best].length)) best = c;
+    }
+    if (best >= 0) {
+      asignacion[idx] = corridas[best].splice(0, n).map(function(s) { return s.nombre; });
+      if (!corridas[best].length) corridas.splice(best, 1);
+      return;
+    }
+    // Sin corrida que alcance: juntar desde las corridas más chicas (sueltos de filas impares),
+    // después los PDFs con nombre no parseable.
+    var tomados = [];
+    while (tomados.length < n && corridas.length) {
+      var minC = 0;
+      for (var m = 1; m < corridas.length; m++) if (corridas[m].length < corridas[minC].length) minC = m;
+      corridas[minC].splice(0, n - tomados.length).forEach(function(s) { tomados.push(s.nombre); });
+      if (!corridas[minC].length) corridas.splice(minC, 1);
+    }
+    while (tomados.length < n && sueltos.length) tomados.push(sueltos.shift());
+    asignacion[idx] = tomados;
+    noContiguos.push(idx);
+  });
+
+  noContiguos.sort(function(a, b) { return a - b; });
+  return { asignacion: asignacion, noContiguos: noContiguos };
+}
+
+
 function enviarMails(showId, entradasXGan) {
   const lock = LockService.getScriptLock();
   try {
@@ -451,10 +536,18 @@ function _enviarMailsLocked(showId, entradasXGan) {
     };
   }
 
+  // Asignación por asientos contiguos (misma fila, numeración seguida) calculada una vez
+  // porNombre guarda listas por si hubiera dos archivos con el mismo nombre (no se pisan)
+  const porNombre = {};
+  pdfs.forEach(function(p) { var k = p.getName(); if (!porNombre[k]) porNombre[k] = []; porNombre[k].push(p); });
+  const asig = _asignarPdfsContiguos(pdfs.map(function(p) { return p.getName(); }), ganadores.map(function(g) { return g.entradas; }));
+  const noContiguosIdx = {};
+  asig.noContiguos.forEach(function(i) { noContiguosIdx[i] = true; });
+
   const errores = [];
   const enviadosMails = [];
+  const noContiguos = [];
   let enviados = 0;
-  let pdfCursor = 0;
   let idx = 0;
 
   for (idx = 0; idx < ganadores.length; idx++) {
@@ -478,8 +571,9 @@ function _enviarMailsLocked(showId, entradasXGan) {
         replyTo: CONFIG.MAIL_FROM_ALIAS
       };
 
-      // Cada ganador consume g.entradas PDFs de la lista disponible
-      const pdfSlice = pdfs.slice(pdfCursor, pdfCursor + g.entradas);
+      // PDFs asignados a este ganador (asientos contiguos de una misma fila si los hay)
+      const pdfSlice = asig.asignacion[idx].map(function(nom) { return porNombre[nom].shift(); });
+      if (pdfSlice.length < g.entradas) throw new Error("PDFs insuficientes para asignar (" + pdfSlice.length + "/" + g.entradas + ")");
       const pdfNombres = pdfSlice.map(function(p) { return p.getName(); }).join(", ");
       opts.attachments = pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); });
 
@@ -494,7 +588,7 @@ function _enviarMailsLocked(showId, entradasXGan) {
       sent = true;
       hoja.getRange(g.fila, 8).setValue("Enviado");
 
-      pdfCursor += g.entradas;
+      if (noContiguosIdx[idx]) noContiguos.push(g.nombre);
       enviados++;
       enviadosMails.push(g.mail);
       Utilities.sleep(1200);
@@ -505,8 +599,6 @@ function _enviarMailsLocked(showId, entradasXGan) {
           hoja.getRange(g.fila, 8).setValue("Pendiente");
           hoja.getRange(g.fila, 9).setValue("");
         } catch (e2) {}
-      } else {
-        pdfCursor += g.entradas; // el mail salió: sus PDFs quedan consumidos
       }
       errores.push(g.nombre + " (" + g.mail + "): " + err.message);
     }
@@ -522,9 +614,172 @@ function _enviarMailsLocked(showId, entradasXGan) {
     enviadosMails: enviadosMails,
     errores: errores,
     restantes: restantes,
+    noContiguos: noContiguos,
     mensaje: enviados + " mail" + (enviados !== 1 ? "s" : "") + " enviado" + (enviados !== 1 ? "s" : "") +
              (restantes ? " · quedan " + restantes + " pendientes" : "") +
+             (noContiguos.length ? " · " + noContiguos.length + " con asientos no contiguos" : "") +
              (errores.length ? " · " + errores.length + " con error" : "")
+  };
+}
+
+// ============================================================
+//  REENVIAR ENTRADA FALTANTE — corrección puntual: a ganadores que YA
+//  figuran "Enviado" pero recibieron menos entradas de las que
+//  correspondían (ej: error de configuración del show), se les
+//  reasignan `entradasCorrectas` PDFs de una sola vez desde CERO —
+//  toda la carpeta del show se reparte de nuevo entre los afectados
+//  (asientos contiguos si hay), sin intentar reusar puntualmente el
+//  PDF que cada uno ya tenía. Cada uno recibe UN mail con sus PDFs
+//  nuevos, aclarando que el mail anterior (con 1 sola entrada) queda
+//  reemplazado. La planilla queda con esos PDFs nuevos (no con
+//  viejo+nuevo). No toca ganadores "Pendiente" — para esos usar
+//  enviarMails. Idempotente: si ya se corrigió, no reenvía.
+//  soloMail (opcional): si viene, ignora a todos los demás ganadores del
+//  show — sirve para probar la corrección con 1 sola persona antes de
+//  correrla sobre el resto.
+// ============================================================
+function reenviarEntradaFaltante(showId, entradasCorrectas, soloMail) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (e) {
+    return { ok: false, error: "Otro envío está en curso — esperá unos segundos y reintentá." };
+  }
+  try {
+    return _reenviarEntradaFaltanteLocked(showId, entradasCorrectas, soloMail);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function _reenviarEntradaFaltanteLocked(showId, entradasCorrectas, soloMail) {
+  if (!showId) return { ok: false, error: "Show ID requerido" };
+  const correctas = parseInt(entradasCorrectas);
+  if (isNaN(correctas) || correctas < 1 || correctas > 10) return { ok: false, error: "Cantidad correcta inválida (1 a 10)" };
+  const filtroMail = soloMail ? String(soloMail).trim().toLowerCase() : null;
+
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_SORTEO_ID);
+  const hoja = ss.getSheetByName("Ganadores");
+  if (!hoja) return { ok: false, error: "No hay ganadores registrados" };
+
+  const datos = hoja.getDataRange().getValues();
+  const afectados = [];
+
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() !== String(showId).trim()) continue;
+    if (String(datos[i][7]).trim() !== "Enviado") continue;
+    if (filtroMail && String(datos[i][5]).trim().toLowerCase() !== filtroMail) continue;
+    const pdfsActuales = String(datos[i][8] || "").split(",").map(function(s) { return s.trim(); }).filter(Boolean);
+    if (pdfsActuales.length < correctas) {
+      afectados.push({
+        mail: String(datos[i][5]).trim(),
+        nombre: String(datos[i][6]).trim(),
+        showNombre: String(datos[i][2]).trim(),
+        fecha: String(datos[i][3]).trim(),
+        venue: String(datos[i][4]).trim(),
+        fila: i + 1
+      });
+    }
+  }
+
+  if (!afectados.length) return { ok: true, enviados: 0, mensaje: "No hay ganadores con entradas incompletas para este show" };
+
+  // El ticketing a veces re-exporta los PDFs con cero(s) a la izquierda en el
+  // número (ej. "018659397..." en Drive vs "18659397..." guardado antes en la
+  // planilla) aunque sea el mismo ticket físico — se compara ignorando esos ceros.
+  const _sinCeros = function(nombre) { return String(nombre).trim().replace(/^0+(?=\d)/, ""); };
+
+  // Filas que YA tienen entradasCorrectas o más PDFs (corregidas en una corrida
+  // anterior de esta misma función, o nunca tuvieron el problema): sus PDFs
+  // quedan reservados y no se reparten de nuevo — evita que dos corridas
+  // separadas (ej. una prueba con soloMail y después la corrida completa)
+  // terminen asignándole el mismo ticket a dos ganadores distintos.
+  const comprometidos = {};
+  for (let i = 1; i < datos.length; i++) {
+    if (String(datos[i][1]).trim() !== String(showId).trim()) continue;
+    const pdfsFila = String(datos[i][8] || "").split(",").map(function(s) { return s.trim(); }).filter(Boolean);
+    if (pdfsFila.length >= correctas) {
+      pdfsFila.forEach(function(n) { comprometidos[_sinCeros(n)] = true; });
+    }
+  }
+
+  const todos = buscarPDFs(showId, afectados[0].showNombre).filter(function(p) { return !comprometidos[_sinCeros(p.getName())]; });
+  const necesarios = afectados.length * correctas;
+  if (todos.length < necesarios) {
+    return {
+      ok: false,
+      error: "Hay " + todos.length + " PDF(s) libres en la carpeta y se necesitan " + necesarios +
+             " (" + correctas + " c/u) para " + afectados.length + " ganador(es) — no se envió ningún mail."
+    };
+  }
+
+  const porNombre = {};
+  todos.forEach(function(p) { var k = p.getName(); if (!porNombre[k]) porNombre[k] = []; porNombre[k].push(p); });
+  const asig = _asignarPdfsContiguos(todos.map(function(p) { return p.getName(); }), afectados.map(function() { return correctas; }));
+
+  const errores = [];
+  const enviadosMails = [];
+  let enviados = 0;
+
+  afectados.forEach(function(g, idx) {
+    try {
+      const pdfSlice = asig.asignacion[idx].map(function(nom) { return porNombre[nom].shift(); });
+      const pdfNombres = pdfSlice.map(function(p) { return p.getName(); }).join(", ");
+
+      const asunto = "Entradas para " + g.showNombre + " — mail anterior reemplazado";
+      const cuerpo = "Hola " + g.nombre + ",\n\n" +
+        "Por un error del sistema, antes te habíamos mandado 1 sola entrada para " + g.showNombre + ".\n\n" +
+        "Este mail lo reemplaza: te adjuntamos tus " + correctas + " entradas correctas. " +
+        "Usá las que están acá — cualquier entrada que hayas recibido antes no es válida.\n\n" +
+        "Fecha: " + g.fecha + "\nLugar: " + g.venue + "\n\n" +
+        "Disculpá las molestias.\n\nEquipo Movistar Arena";
+
+      const opts = {
+        name: CONFIG.MAIL_REMITENTE,
+        from: CONFIG.MAIL_FROM_ALIAS,
+        replyTo: CONFIG.MAIL_FROM_ALIAS,
+        attachments: pdfSlice.map(function(p) { return p.getAs(MimeType.PDF); }),
+        htmlBody: cuerpo.replace(/\n/g, "<br>")
+      };
+
+      GmailApp.sendEmail(g.mail, asunto, cuerpo, opts);
+
+      hoja.getRange(g.fila, 9).setValue(pdfNombres);
+      hoja.getRange(g.fila, 10).setValue(correctas);
+
+      enviados++;
+      enviadosMails.push(g.mail);
+      Utilities.sleep(1200);
+    } catch (err) {
+      errores.push(g.nombre + " (" + g.mail + "): " + err.message);
+    }
+  });
+
+  return {
+    ok: true,
+    enviados: enviados,
+    enviadosMails: enviadosMails,
+    errores: errores,
+    mensaje: enviados + " corrección(es) enviada(s)" + (errores.length ? " · " + errores.length + " con error" : "")
+  };
+}
+
+// ============================================================
+//  DEBUG TEMPORAL — diagnostica por qué reenviarEntradaFaltante no
+//  encuentra por nombre un PDF que buscarPDFs debería listar. Borrar
+//  una vez resuelto el incidente de Hellowen.
+// ============================================================
+function debugBuscarPdfExacto(showId, showNombre, nombre) {
+  const todos = buscarPDFs(showId, showNombre);
+  const nombres = todos.map(function(p) { return p.getName(); }).sort();
+  const buscado = String(nombre);
+  return {
+    ok: true,
+    total: nombres.length,
+    exacto: nombres.indexOf(buscado) !== -1,
+    exactoNormalizado: nombres.some(function(n) { return n.normalize("NFC") === buscado.normalize("NFC"); }),
+    largoBuscado: buscado.length,
+    todos: nombres
   };
 }
 

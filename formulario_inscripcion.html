@@ -240,30 +240,13 @@ body::before{
           id="input-mail"
           placeholder="tunombre@movistararena.com.ar"
           autocomplete="email"
-          onkeydown="if(event.key==='Enter')validar()"
+          onkeydown="if(event.key==='Enter')inscribir()"
         >
       </div>
-      <button class="btn btn-primary" onclick="validar()" id="btn-validar">
-        <span id="btn-validar-txt">Verificar mail</span>
-        <div class="spinner" id="spin-validar"></div>
-      </button>
-    </div>
-
-    <!-- STEP 2: confirmar nombre -->
-    <div class="step" id="step-2">
-      <div class="step-label">Confirmá tus datos</div>
-      <div class="step-title">¿Sos vos?</div>
-      <div class="alert a-warn" id="err-confirm"></div>
-      <div class="nombre-preview" id="nombre-preview" style="display:block">
-        <div class="np-label">Nombre registrado</div>
-        <div class="np-name" id="preview-nombre"></div>
-      </div>
-      <div style="font-size:12px;color:var(--gray3);margin-bottom:16px" id="preview-mail"></div>
       <button class="btn btn-primary" onclick="inscribir()" id="btn-inscribir">
-        <span id="btn-inscribir-txt">Sí, inscribirme al sorteo</span>
+        <span id="btn-inscribir-txt">Inscribirme al sorteo</span>
         <div class="spinner" id="spin-inscribir"></div>
       </button>
-      <button class="btn btn-outline" onclick="volverStep1()">Usar otro mail</button>
     </div>
 
     <!-- STEP 3: éxito -->
@@ -304,9 +287,6 @@ const SHOW_NOMBRE = params.get("nombre") || "Show";
 const SHOW_FECHA  = params.get("fecha")  || "";
 const SHOW_VENUE  = params.get("venue")  || "Movistar Arena";
 
-let mailValido = "";
-let nombreValido = "";
-
 // ── INIT ──────────────────────────────────────────────────
 document.getElementById("show-nombre").textContent = SHOW_NOMBRE;
 document.getElementById("show-meta").textContent =
@@ -337,11 +317,11 @@ function setLoading(btnId, spinId, txtId, loading) {
   document.getElementById(spinId).style.display = loading ? "block" : "none";
   document.getElementById(txtId).style.opacity = loading ? "0.4" : "1";
 }
-function showErr(id, msg) {
+function showErr(id, msg, ms = 4000) {
   const el = document.getElementById(id);
   el.textContent = msg;
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 4000);
+  setTimeout(() => el.classList.remove("show"), ms);
 }
 async function callScript(data) {
   const r = await fetch(SCRIPT_URL, {
@@ -351,8 +331,8 @@ async function callScript(data) {
   return r.json();
 }
 
-// ── PASO 1: VALIDAR MAIL ───────────────────────────────────
-async function validar() {
+// ── INSCRIBIR (valida el mail y anota en un solo paso) ─────
+async function inscribir() {
   const mail = document.getElementById("input-mail").value.trim();
   if (!mail || !mail.includes("@")) {
     showErr("err-mail", "Ingresá un mail válido.");
@@ -360,41 +340,26 @@ async function validar() {
   }
   if (!SHOW_ID) { showErr("err-mail", "Este formulario no tiene un show configurado."); return; }
 
-  setLoading("btn-validar", "spin-validar", "btn-validar-txt", true);
-
-  try {
-    const res = await callScript({ action: "validarMail", mail });
-    if (!res.ok) { showErr("err-mail", res.error || "Error al verificar."); return; }
-    if (!res.existe) {
-      showErr("err-mail", "Tu mail no está registrado en el sistema. Contactá a RRHH.");
-      return;
-    }
-    mailValido = mail;
-    nombreValido = res.nombre;
-    document.getElementById("preview-nombre").textContent = res.nombre.toUpperCase();
-    document.getElementById("preview-mail").textContent = mail;
-    showStep(2);
-  } catch (e) {
-    showErr("err-mail", "Error de conexión. Intentá de nuevo.");
-  } finally {
-    setLoading("btn-validar", "spin-validar", "btn-validar-txt", false);
-  }
-}
-
-// ── PASO 2: INSCRIBIR ──────────────────────────────────────
-async function inscribir() {
   setLoading("btn-inscribir", "spin-inscribir", "btn-inscribir-txt", true);
+  document.getElementById("btn-inscribir-txt").textContent = "Inscribiendo…";
 
   try {
     const res = await callScript({
       action: "inscribir",
-      mail: mailValido,
+      mail,
       showId: SHOW_ID,
       showNombre: SHOW_NOMBRE,
       fecha: SHOW_FECHA,
     });
 
-    if (!res.ok) { showErr("err-confirm", res.error || "Error al inscribirse."); return; }
+    if (!res.ok) {
+      if (/no encontrado/i.test(res.error || "")) {
+        showErr("err-mail", "Tu mail no está registrado en el sistema. Revisá que esté bien escrito o contactá a RRHH.", 10000);
+      } else {
+        showErr("err-mail", res.error || "Error al inscribirse.");
+      }
+      return;
+    }
 
     if (res.yaInscripto) {
       document.getElementById("success-title").textContent = "Ya estás inscripto";
@@ -408,9 +373,10 @@ async function inscribir() {
     showStep(3);
     launchConfetti();
   } catch (e) {
-    showErr("err-confirm", "Error de conexión. Intentá de nuevo.");
+    showErr("err-mail", "Error de conexión. Intentá de nuevo.");
   } finally {
     setLoading("btn-inscribir", "spin-inscribir", "btn-inscribir-txt", false);
+    document.getElementById("btn-inscribir-txt").textContent = "Inscribirme al sorteo";
   }
 }
 
@@ -431,11 +397,6 @@ function launchConfetti() {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), (dur + delay + 0.2) * 1000);
   }
-}
-
-function volverStep1() {
-  document.getElementById("input-mail").value = "";
-  showStep(1);
 }
 </script>
 </body>

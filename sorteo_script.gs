@@ -27,6 +27,11 @@ const CONFIG = {
   // o uno nuevo que crees vacío
   SHEET_SORTEO_ID: "15YojsGUsDfhFBLOkBGxkLXvC7kSr6HUsJQgf99RhpWQ",
 
+  // Celda de "Tracking Ganadores" con el total histórico de tickets (fila "Tickets",
+  // debajo de la fila "Total" que es una fórmula). Baja cuando se agregan colaboradores
+  // a la lista (col A): hay que actualizarla acá.
+  CELDA_TOTAL_TICKETS: "B130",
+
   // Nombre del remitente en los mails
   MAIL_REMITENTE: "Movistar Arena — RRHH",
 
@@ -297,7 +302,7 @@ function guardarGanadores(ganadores, showId, showNombre, fecha, venue) {
 
 // ============================================================
 //  ACTUALIZAR ENTRADAS — edita la cantidad de un ganador Pendiente
-//  Ajusta B123 (total historico de tickets) por el delta para que
+//  Ajusta CELDA_TOTAL_TICKETS (total historico de tickets) por el delta para que
 //  el total del dashboard no quede desfasado tras la edicion.
 // ============================================================
 function actualizarEntradas(showId, mail, entradas, entradasPrev) {
@@ -327,11 +332,11 @@ function actualizarEntradas(showId, mail, entradas, entradasPrev) {
         delta = n - old;
         try {
           var tr = ss.getSheetByName("Tracking Ganadores");
-          var valB = tr.getRange("B123").getValue();
+          var valB = tr.getRange(CONFIG.CELDA_TOTAL_TICKETS).getValue();
           var base = (valB && !isNaN(Number(valB))) ? parseInt(valB) : 0;
-          tr.getRange("B123").setValue(base + delta);
+          tr.getRange(CONFIG.CELDA_TOTAL_TICKETS).setValue(base + delta);
         } catch (e2) {
-          Logger.log("actualizarEntradas: no se pudo ajustar B123: " + e2.message);
+          Logger.log("actualizarEntradas: no se pudo ajustar " + CONFIG.CELDA_TOTAL_TICKETS + ": " + e2.message);
           delta = 0;
         }
       }
@@ -883,21 +888,21 @@ function trackingGanadores(ganadores, showNombre, fecha, entradasXGan) {
     var names = ganadores.map(function(g) { return [(g.nombre || g.mail).toUpperCase()]; });
     hoja.getRange(firstEmpty, col, names.length, 1).setValues(names);
 
-    // Auto-increment B123 (ticketsBase) so the app stays in sync without manual updates
+    // Auto-increment CELDA_TOTAL_TICKETS (ticketsBase) so the app stays in sync without manual updates
     var n = parseInt(entradasXGan) || 1;
     var ticketsAdded = ganadores.reduce(function(acc, g) {
       var e = parseInt(g.entradas);
       return acc + ((isNaN(e) || e < 1 || e > 10) ? n : e);
     }, 0);
     try {
-      var valB123 = hoja.getRange("B123").getValue();
-      var currentBase = (valB123 && !isNaN(Number(valB123))) ? parseInt(valB123) : 0;
-      hoja.getRange("B123").setValue(currentBase + ticketsAdded);
+      var valTotal = hoja.getRange(CONFIG.CELDA_TOTAL_TICKETS).getValue();
+      var currentBase = (valTotal && !isNaN(Number(valTotal))) ? parseInt(valTotal) : 0;
+      hoja.getRange(CONFIG.CELDA_TOTAL_TICKETS).setValue(currentBase + ticketsAdded);
     } catch(e2) {
-      Logger.log("Error actualizando B123: " + e2.message);
+      Logger.log("Error actualizando " + CONFIG.CELDA_TOTAL_TICKETS + ": " + e2.message);
     }
 
-    Logger.log("trackingGanadores: " + ganadores.length + " agregados en col " + col + " fila " + firstEmpty + ", B123 +=" + ticketsAdded);
+    Logger.log("trackingGanadores: " + ganadores.length + " agregados en col " + col + " fila " + firstEmpty + ", " + CONFIG.CELDA_TOTAL_TICKETS + " +=" + ticketsAdded);
     return { ok: true, ticketsAdded: ticketsAdded, mensaje: ganadores.length + " ganadores agregados en " + showNombre + " (columna C)" };
   } catch(e) {
     Logger.log("Error en trackingGanadores: " + e.message);
@@ -968,13 +973,13 @@ function leerTracking() {
       Logger.log("Error leyendo empleados: " + e2.message);
     }
 
-    // Read base tickets from B123
+    // Read base tickets from CELDA_TOTAL_TICKETS
     var ticketsBase = 0;
     try {
-      var valB123 = hoja.getRange("B123").getValue();
-      if (valB123 && !isNaN(Number(valB123))) ticketsBase = parseInt(valB123);
+      var valTotal = hoja.getRange(CONFIG.CELDA_TOTAL_TICKETS).getValue();
+      if (valTotal && !isNaN(Number(valTotal))) ticketsBase = parseInt(valTotal);
     } catch(e2) {
-      Logger.log("Error leyendo B123: " + e2.message);
+      Logger.log("Error leyendo " + CONFIG.CELDA_TOTAL_TICKETS + ": " + e2.message);
     }
 
     // Read canonical colaboradores list from columns A (names) and B (win count)
